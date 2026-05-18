@@ -28,7 +28,7 @@ public class MaintenanceRequest {
     @Size(min = 10, message = "Description must be at least 10 characters long")
     private String description;
 
-    @NotNull(message = "categoryId cannot be empty")
+//    @NotNull(message = "categoryId cannot be empty")
     @Column(columnDefinition = "INT")
     private Integer categoryId;
 

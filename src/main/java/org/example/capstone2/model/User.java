@@ -38,6 +38,9 @@ public class User {
     @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$")
     private String password;
 
+    @NotEmpty(message = "District cannot be null")
+    @Column(columnDefinition = "VARCHAR(40)")
+    private String district;
 
     @NotEmpty(message = "apartment number cannot be null")
     @Column(columnDefinition = "VARCHAR(20)")

@@ -24,6 +24,8 @@ public class MaintenanceRequestService {
     private final MaterialRepository materialRepository;
     private final MailService mailService;
     private final WhatsAppService whatsAppService;
+    private final OpenAiService openAiService;
+    private final DistanceMatrixService distanceMatrixService;
 
 
 
@@ -33,15 +35,12 @@ public class MaintenanceRequestService {
         return requestRepository.findAll();
     }
 
-    public MaintenanceRequest submitRequest(MaintenanceRequest request) {
+    public void submitRequest(MaintenanceRequest request) {
         User user= userRepository.findUserById(request.getUserId());
 
         if(user==null)
                 throw new ApiException("User not found: " + request.getUserId());
-        Category category = categoryRepository.findCategoryById(request.getCategoryId());
 
-        if(category==null)
-                throw new ApiException("Category not found: " + request.getCategoryId());
 
         if(request.getWorkerId()!=null) {
             if(user.getSubscriptionType().equalsIgnoreCase("FREE"))
@@ -56,14 +55,21 @@ public class MaintenanceRequestService {
 
            if(worker.getSpecialtyAt()!=request.getCategoryId())
                throw new ApiException("Worker specialty does not match request needed");
-
-           whatsAppService.sendChatMessage(worker.getPhone(),"You have new request: "+request.getTitle()+"\n"+request.getDescription());
+            //uncomment later
+//           whatsAppService.sendChatMessage(worker.getPhone(),"You have new request: "+request.getTitle()+"\n"+request.getDescription());
 
         }
+        //using AI to classify the request
+        Integer categorey=openAiService.chat(request.getTitle());
+        request.setCategoryId(categorey);
+        //check if the category exists
+        Category category = categoryRepository.findCategoryById(request.getCategoryId());
+        if(category==null)
+            throw new ApiException("We can not classify: Make sure your is specific");
         request.setStatus("PENDING");
         request.setUrgent(false);
         request.setCreatedAt(LocalDateTime.now());
-        return requestRepository.save(request);
+        requestRepository.save(request);
     }
 
     public void deleteRequest(Integer requestId) {
@@ -163,13 +169,42 @@ public class MaintenanceRequestService {
         //if no one has rating get any worker in this category
         if(best==null)
             best=workers.get(0);
-
-        whatsAppService.sendChatMessage(best.getPhone(),"You have new request: "+request.getTitle()+"\n"+request.getDescription());
+//uncomment later
+       // whatsAppService.sendChatMessage(best.getPhone(),"You have new request: "+request.getTitle()+"\n"+request.getDescription());
         request.setWorkerId(best.getId());
 //        request.setStatus("ASSIGNED");
         request.setUpdatedAt(LocalDateTime.now());
         requestRepository.save(request);
     }
+
+    //assign a request to closer worker
+    public void assignToCloserWorker(Integer requestId) {
+
+        MaintenanceRequest request = getRequestById(requestId);
+
+        User user =userRepository.findUserById(request.getUserId());
+        List<Worker> workers=workerRepository.findWorkerByAvailableAndSpecialtyAt(true,request.getCategoryId());
+        if(user==null)
+            throw new ApiException("User not found: ");
+
+        if(user.getSubscriptionType().equalsIgnoreCase("FREE"))
+            throw new ApiException("Only PREMIUM users can use auto-assign");
+
+        if (!request.getStatus().equalsIgnoreCase("PENDING"))
+            throw new ApiException("Only PENDING requests can be assigned to the closest worker");
+
+        if(workers.isEmpty())
+            throw new ApiException("No available workers for this category");
+
+        Worker closest=findClosest(user,workers);
+        request.setWorkerId(closest.getId());
+//        whatsAppService.sendChatMessage(closest.getPhone(),"You have new request:");
+        request.setUpdatedAt(LocalDateTime.now());
+        requestRepository.save(request);
+
+    }
+
+
 
     //admin assigns worker to urgent request
 
@@ -203,7 +238,8 @@ public class MaintenanceRequestService {
 
         request.setWorkerId(workerId);
         requestRepository.save(request);
-        whatsAppService.sendChatMessage(worker.getPhone(),"You have new request from the admin: "+request.getTitle()+"\n"+request.getDescription());
+        //uncomment later
+       // whatsAppService.sendChatMessage(worker.getPhone(),"You have new request from the admin: "+request.getTitle()+"\n"+request.getDescription());
 
     }
 
@@ -251,28 +287,37 @@ public class MaintenanceRequestService {
 
     // tracking status of request
 //
-    @Scheduled(fixedRate = 30000) // Runs every 30 seconds
-    public void markUnacceptedRequestsAsUrgent() {
-            // Get all pending requests that are not yet marked as urgent
-            List<MaintenanceRequest> pendingRequests = requestRepository.findMaintenanceRequestByUrgentIsFalseAndStatus("PENDING");
+//    @Scheduled(fixedRate = 30000) // Runs every 30 seconds
+//    public void markUnacceptedRequestsAsUrgent() {
+//            // Get all pending requests that are not yet marked as urgent
+//            List<MaintenanceRequest> pendingRequests = requestRepository.findMaintenanceRequestByUrgentIsFalseAndStatus("PENDING");
+//
+//            LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+//
+//            for (MaintenanceRequest request : pendingRequests) {
+//                if (request.getCreatedAt().isBefore(fiveMinutesAgo)) {
+//                    User user = userRepository.findUserByRole("ADMIN");
+//                    request.setUrgent(true);
+//                    request.setUpdatedAt(LocalDateTime.now());
+//                    requestRepository.save(request);
+//                    //notifying the admin that the request is urgent and need assigning
+//                    String message="Request ID: " + request.getId() + " marked as URGENT";
+//                    mailService.sendPlainText(user.getEmail(),"Urgent request",message);
+//
+//                }
+//            }
+//
+//    }
 
-            LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
-
-            for (MaintenanceRequest request : pendingRequests) {
-                if (request.getCreatedAt().isBefore(fiveMinutesAgo)) {
-                    User user = userRepository.findUserByRole("ADMIN");
-                    request.setUrgent(true);
-                    request.setUpdatedAt(LocalDateTime.now());
-                    requestRepository.save(request);
-                    //notifying the admin that the request is urgent and need assigning
-                    String message="Request ID: " + request.getId() + " marked as URGENT";
-                    mailService.sendPlainText(user.getEmail(),"Urgent request",message);
-
-                }
-            }
-
-    }
-
+//    public List<Worker> getBest5ClosetInCategory(Integer category) {
+//        List<Worker> workers=workerRepository.findBestWorkersBySpecialityAndAvailable(category);
+//        if(workers.isEmpty())
+//            throw new ApiException("No workers found in this category");
+//        if(workers.size()>5)
+//            workers=workers.subList(0,5);
+//        return workers;
+//
+//    }
 
     // global stats summary
 
@@ -286,4 +331,21 @@ public class MaintenanceRequestService {
         stats.put("cancelled", requestRepository.countByStatus("CANCELLED"));
         return stats;
     }
+
+    //helper
+    public Worker findClosest(User user, List<Worker> workers) {
+        Worker closestWorker = workers.get(0);
+        Double minDist = distanceMatrixService.getDistance(user.getDistrict(), closestWorker.getDistrict());;
+
+        for (Worker worker : workers) {
+            Double distance = distanceMatrixService.getDistance(user.getDistrict(), worker.getDistrict()); // call API for each worker
+            if (distance < minDist) {
+                minDist = distance;
+                closestWorker = worker;
+            }
+        }
+        return closestWorker;
+    }
+
+
 }

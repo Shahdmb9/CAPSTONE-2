@@ -3,6 +3,7 @@ package org.example.capstone2.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.example.capstone2.ApiResponse.ApiResponse;
 import org.example.capstone2.model.MaintenanceRequest;
 import org.example.capstone2.service.MaintenanceRequestService;
 import org.springframework.http.HttpStatus;
@@ -52,6 +53,12 @@ public class MaintenanceRequestController {
     public ResponseEntity<?> autoAssign(@PathVariable Integer requestid){
         requestService.autoAssignToBestWorker(requestid);
         return ResponseEntity.status(200).body("Request assigned successfully");
+    }
+
+    @PutMapping("assign-to-closet-worker/{requestid}")
+    public ResponseEntity<?> assignToClosetWorker(@PathVariable Integer requestid){
+        requestService.assignToCloserWorker(requestid);
+        return ResponseEntity.status(200).body(new ApiResponse("Request assigned to closet worker successfully"));
     }
 
     @GetMapping("/get-stats")

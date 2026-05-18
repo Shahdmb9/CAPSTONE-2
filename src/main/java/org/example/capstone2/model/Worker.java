@@ -33,6 +33,10 @@ public class Worker {
     @Positive
     private Double baseSalary;
 
+    @NotEmpty(message = "District cannot be null")
+    @Column(columnDefinition = "VARCHAR(40)")
+    private String district;
+
     @Column(columnDefinition = "Boolean")
     private boolean available;
 

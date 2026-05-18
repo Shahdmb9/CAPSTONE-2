@@ -46,4 +46,6 @@ public interface WorkerRepository extends JpaRepository<Worker, Integer> {
     @Query("SELECT w FROM Worker w JOIN Rating r ON r.workerId = w.id And w.available=true WHERE w.specialtyAt = ?1 GROUP BY w ORDER BY AVG(r.score) DESC")
     List<Worker> findBestWorkersBySpecialityAndAvailable(Integer specialityId);
 
+
+
 }

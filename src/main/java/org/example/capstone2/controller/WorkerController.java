@@ -156,6 +156,16 @@ public class WorkerController {
         return ResponseEntity.ok().body("Worker availability updated successfully");
     }
 
+    @GetMapping("/estmated-time/{workerid}/{requestid}")
+    public ResponseEntity<?> getEstimatedTime(@PathVariable Integer workerid,@PathVariable Integer requestid){
+        return ResponseEntity.status(200).body(workerService.getRequiestEstmatedTime(workerid,requestid));
+    }
+
+    @GetMapping("/distance-to-request/{workerid}/{requestid}")
+    public ResponseEntity<?> getDistanceToRequest(@PathVariable Integer workerid,@PathVariable Integer requestid){
+        return ResponseEntity.status(200).body(workerService.getDistanceBetweenWorkersAndUser(workerid,requestid));
+    }
+
 
 
 

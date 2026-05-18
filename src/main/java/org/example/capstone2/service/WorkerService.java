@@ -24,7 +24,8 @@ public class WorkerService {
     private final WhatsAppService whatsAppService;
     private final MaterialRepository materialRepository;
     private final NotificationService notificationService;
-
+    private final OpenAiService openAiService;
+    private final DistanceMatrixService distanceMatrixService;
 
 
     //register a new worker
@@ -172,10 +173,11 @@ public class WorkerService {
         request.setWorkerId(workerId);
         request.setStatus("ASSIGNED");
 
-        //setting worker id for all the requests that are waiting for this worker to null and notify them he is not available
+        //setting worker id for all the requests that are waiting for this worker to null and notify users he is not available
         List<MaintenanceRequest> updatedRequest=requestRepository.findMaintenanceRequestByWorkerIdAndStatus(workerId,"PENDING");
         requestRepository.updateAllWorkerIdInRequest(workerId);
-        notificationService.notifyUsersNotAvailably(updatedRequest,workerId);
+        //uncomment later
+        //notificationService.notifyUsersNotAvailably(updatedRequest,workerId);
         request.setUpdatedAt(LocalDateTime.now());
         requestRepository.save(request);
     }
@@ -198,7 +200,8 @@ public class WorkerService {
 
         request.setWorkerId(null);
         request.setUpdatedAt(LocalDateTime.now());
-        whatsAppService.sendChatMessage(user.getPhone(),"You're request to worker "+worker.getName()+" Got rejected");
+        //uncomment later
+       // whatsAppService.sendChatMessage(user.getPhone(),"You're request to worker "+worker.getName()+" Got rejected");
         requestRepository.save(request);
 
     }
@@ -210,7 +213,10 @@ public class WorkerService {
         if(request == null)
             throw new ApiException("Request not found: ");
 
-        getWorkerById(workerId);
+        Worker worker=getWorkerById(workerId);
+
+        if(!worker.getId().equals(request.getWorkerId()))
+            throw new RuntimeException("This request is for another worker");
 
         if (!request.getStatus().equalsIgnoreCase("ASSIGNED")) {
             throw new RuntimeException("Only ASSIGNED requests can be started");
@@ -229,9 +235,13 @@ public class WorkerService {
         if (!request.getStatus().equalsIgnoreCase("IN_PROGRESS")) {
             throw new RuntimeException("Only IN_PROGRESS requests can be resolved");
         }
+        if(worker.getId()!=request.getWorkerId())
+            throw new RuntimeException("This request is not assigned to you");
+
         worker.setAvailable(true);
         workerRepository.save(worker);
-        notificationService.notifyUsers(workerId);
+        //uncomment later
+        //notificationService.notifyUsers(workerId);
         request.setStatus("RESOLVED");
         request.setUpdatedAt(LocalDateTime.now());
         requestRepository.save(request);
@@ -260,9 +270,9 @@ public class WorkerService {
         Double materials = materialRepository.getTotalMaterialsCostThisMonth(workerId);
 
         Map<String, Object> result = new HashMap<>();
-        result.put("salaryEarned",    salary);
+        result.put("salaryEarned",salary);
         result.put("materialsEarned", materials);
-        result.put("totalEarned",     salary + materials);
+        result.put("totalEarned",salary + materials);
         return result;
     }
 
@@ -274,6 +284,23 @@ public class WorkerService {
             throw new ApiException("Category not found: " );
         }
         return workerRepository.findBestWorkersBySpecialityAndAvailable(categoryId);
+    }
+
+    //get distance between worker and user
+    public Map<String, Object> getDistanceBetweenWorkersAndUser(Integer workerId, Integer requestId) {
+        Worker worker = getWorkerById(workerId);
+
+        MaintenanceRequest request = getMyRequest(workerId, requestId);
+
+        User user = userRepository.findUserById(request.getUserId());
+
+        Map<String, Object> result = new HashMap<>();
+
+        Double distance=distanceMatrixService.getDistance(worker.getDistrict(),user.getDistrict());
+
+        result.put("distance",distance+" km");
+
+        return result;
     }
 
     //Get worker stats
@@ -296,12 +323,13 @@ public class WorkerService {
         Worker worker = getWorkerById(workerId);
         worker.setAvailable(!worker.isAvailable());
         workerRepository.save(worker);
-        if(worker.isAvailable())
-            notificationService.notifyUsers(workerId);
+        //uncomment later
+        //if(worker.isAvailable())
+          //  notificationService.notifyUsers(workerId);
     }
 
 
-    // helper method: get request and verify it belongs to this worker ─────────────────────
+    // helper method: get request and verify it belongs to this worker
 
     private MaintenanceRequest getMyRequest(Integer workerId, Integer requestId) {
         MaintenanceRequest request = requestRepository.findMaintenanceRequestById(requestId);
@@ -311,6 +339,25 @@ public class WorkerService {
             throw new RuntimeException("this request is not assigned to you");
         }
         return request;
+    }
+
+    public String getRequiestEstmatedTime(Integer workerId,Integer requestId ) {
+
+        MaintenanceRequest request = requestRepository.findMaintenanceRequestById(requestId);
+        if(request==null)
+            throw new ApiException("Request not found: ");
+        if (request.getWorkerId() != null && !request.getWorkerId().equals(workerId)) {
+            throw new RuntimeException("this request is not assigned to you");
+        }
+
+        String promot="based on this maintenance problem:"+request.getDescription()+"\n" +
+                "give me the estimated time to solve it as a specialist in the problem field \n" +
+                "answer as json including hours and time ex: {\"hours\" : 1,\n" +
+                "\"minutes\" : 30} dont add anything else. hours let it numbers only without dot, and the minute also   ";
+        return openAiService.estmatedTime(promot);
+
+
+
     }
 }
 

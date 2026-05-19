@@ -373,16 +373,11 @@ public class WorkerService {
 
     }
 
-    public Map<String, Double> getWorkersRatingSummery() {
+    public Map<String, Double> getWorkerRating(Integer workerId) {
+        Worker worker=getWorkerById(workerId);
+        Double avgRating = ratingRepository.getAverageScoreByWorkerId(workerId);
         Map<String, Double> result = new HashMap<>();
-        List<Worker> workers = workerRepository.findAll();
-        for(Worker w:workers){
-            Double avgRating = ratingRepository.getAverageScoreByWorkerId(w.getId());
-            if(avgRating==null)
-                avgRating=0.0;
-            result.put(w.getName(),avgRating);
-        }
-        //return the summery of all the workers rating (worker name ,his rating)
+        result.put("rating", avgRating != null ? avgRating : 0.0);
         return result;
     }
 

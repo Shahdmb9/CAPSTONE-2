@@ -47,4 +47,9 @@ public class MaterialController {
     public ResponseEntity<?> getRequestMaterials(@PathVariable Integer requestid){
        return ResponseEntity.status(200).body(materialService.getMaterialsByRequest(requestid));
     }
+
+    @GetMapping("/get-request-materials-cost/{requestid}")
+    public ResponseEntity<?> getMaterialsRequestCost(@PathVariable Integer requestid){
+        return ResponseEntity.status(200).body(materialService.getMaterialsCostForRequest(requestid));
+    }
 }

@@ -288,27 +288,27 @@ public class MaintenanceRequestService {
 
     // tracking status of request
 //
-//    @Scheduled(fixedRate = 30000) // Runs every 30 seconds
-//    public void markUnacceptedRequestsAsUrgent() {
-//            // Get all pending requests that are not yet marked as urgent
-//            List<MaintenanceRequest> pendingRequests = requestRepository.findMaintenanceRequestByUrgentIsFalseAndStatus("PENDING");
-//
-//            LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
-//
-//            for (MaintenanceRequest request : pendingRequests) {
-//                if (request.getCreatedAt().isBefore(fiveMinutesAgo)) {
-//                    User user = userRepository.findUserByRole("ADMIN");
-//                    request.setUrgent(true);
-//                    request.setUpdatedAt(LocalDateTime.now());
-//                    requestRepository.save(request);
-//                    //notifying the admin that the request is urgent and need assigning
-//                    String message="Request ID: " + request.getId() + " marked as URGENT";
-//                    mailService.sendPlainText(user.getEmail(),"Urgent request",message);
-//
-//                }
-//            }
-//
-//    }
+    @Scheduled(fixedRate = 30000) // Runs every 30 seconds
+    public void markUnacceptedRequestsAsUrgent() {
+            // Get all pending requests that are not yet marked as urgent
+            List<MaintenanceRequest> pendingRequests = requestRepository.findMaintenanceRequestByUrgentIsFalseAndStatus("PENDING");
+
+            LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+
+            for (MaintenanceRequest request : pendingRequests) {
+                if (request.getCreatedAt().isBefore(fiveMinutesAgo)) {
+                    User user = userRepository.findUserByRole("ADMIN");
+                    request.setUrgent(true);
+                    request.setUpdatedAt(LocalDateTime.now());
+                    requestRepository.save(request);
+                    //notifying the admin that the request is urgent and need assigning
+                    String message="Request ID: " + request.getId() + " marked as URGENT";
+                    mailService.sendPlainText(user.getEmail(),"Urgent request",message);
+
+                }
+            }
+
+    }
 
     public List<MaintenanceRequest> getRequestsByLatest() {
         List<MaintenanceRequest> requests=requestRepository.sortMaintenanceRequestByDate();
@@ -358,29 +358,6 @@ public class MaintenanceRequestService {
         return closetWorkers;
 
     }
-    public Map<Integer,Double> sortByDistance(List<Worker> workers,User user){
-
-        // 1. collect distance with worker id and save them as key value
-        Map<Integer, Double> distanceMap = new LinkedHashMap<>();
-        for (Worker worker : workers) {
-            Double dist = distanceMatrixService.getDistance(worker.getDistrict(),user.getDistrict());
-            distanceMap.put(worker.getId(), dist);
-        }
-
-        //make it as list to sort them
-        List<Map.Entry<Integer, Double>> entryList = new ArrayList<>(distanceMap.entrySet());
-
-        // 3. Sort the list by value which contains distance
-        Collections.sort(entryList, Comparator.comparingDouble(Map.Entry::getValue));
-
-        // 4. saved the sorted list to a new map again
-        Map<Integer, Double> sortedMap = new LinkedHashMap<>();
-        for (Map.Entry<Integer, Double> entry : entryList) {
-            sortedMap.put(entry.getKey(), entry.getValue());
-        }
-
-        return sortedMap;
-    }
 
     // global stats summary
 
@@ -419,6 +396,30 @@ public class MaintenanceRequestService {
             }
         }
         return closestWorker;
+    }
+
+    public Map<Integer,Double> sortByDistance(List<Worker> workers,User user){
+
+        // 1. collect distance with worker id and save them as key value
+        Map<Integer, Double> distanceMap = new LinkedHashMap<>();
+        for (Worker worker : workers) {
+            Double dist = distanceMatrixService.getDistance(worker.getDistrict(),user.getDistrict());
+            distanceMap.put(worker.getId(), dist);
+        }
+
+        //make it as list to sort them
+        List<Map.Entry<Integer, Double>> entryList = new ArrayList<>(distanceMap.entrySet());
+
+        // 3. Sort the list by value which contains distance
+        Collections.sort(entryList, Comparator.comparingDouble(Map.Entry::getValue));
+
+        // 4. saved the sorted list to a new map again
+        Map<Integer, Double> sortedMap = new LinkedHashMap<>();
+        for (Map.Entry<Integer, Double> entry : entryList) {
+            sortedMap.put(entry.getKey(), entry.getValue());
+        }
+
+        return sortedMap;
     }
 
 

@@ -151,6 +151,11 @@ public class WorkerController {
        return ResponseEntity.status(200).body(workerService.getAvailableWorkersBySpecialty(categoryid));
     }
 
+    @GetMapping("/get-workers-rating-summery")
+    public ResponseEntity<?> getWorkersRatingSummery(){
+        return ResponseEntity.status(200).body(workerService.getWorkersRatingSummery());
+    }
+
     @PutMapping("/update-worker-availabilty/{workerId}")
     public ResponseEntity<?> updateWorkerAvailability(@PathVariable Integer workerId) {
         workerService.updateWorkerAvailability(workerId);
@@ -165,6 +170,11 @@ public class WorkerController {
     @GetMapping("/distance-to-request/{workerid}/{requestid}")
     public ResponseEntity<?> getDistanceToRequest(@PathVariable Integer workerid,@PathVariable Integer requestid){
         return ResponseEntity.status(200).body(workerService.getDistanceBetweenWorkersAndUser(workerid,requestid));
+    }
+
+    @GetMapping("/get-worker-urgent-request/{workerid}")
+    public ResponseEntity<?> getWorkerUrgentRequest(@PathVariable Integer workerId){
+        return ResponseEntity.status(200).body(workerService.getWorkerUrgentRequest(workerId));
     }
 
 

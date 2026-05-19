@@ -9,7 +9,9 @@ import org.example.capstone2.repository.MaterialRepository;
 import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -57,6 +59,20 @@ public class MaterialService {
         if(materialRepository.findByRequestId(requestId).isEmpty())
             throw new ApiException("No materials found for this request");
         return materialRepository.findByRequestId(requestId);
+    }
+
+    public Map<String,Double> getMaterialsCostForRequest(Integer requestid) {
+        List<Material> request=materialRepository.findMaterialByRequestId(requestid);
+        Map<String,Double> result=new HashMap<>();
+        if(request.isEmpty()) {
+            result.put("cost",0.0);
+        }
+        double Cost=0;
+        for(Material material:request) {
+            Cost+=material.getUnitCost()*material.getQuantityUsed();
+        }
+        result.put("cost",Cost);
+        return result;
     }
 
 }

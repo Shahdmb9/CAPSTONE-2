@@ -17,6 +17,7 @@ public interface MaintenanceRequestRepository extends JpaRepository<MaintenanceR
 
     MaintenanceRequest findMaintenanceRequestById(Integer id);
 
+    List<MaintenanceRequest> findMaintenanceRequestByWorkerIdAndUrgentIsTrue(Integer workerId);
 //    Integer countAll();
     Integer countMaintenanceRequestByWorkerIdAndStatus(Integer workerId, String status);
     List<MaintenanceRequest> findMaintenanceRequestByUrgentIsFalseAndStatus(String status);

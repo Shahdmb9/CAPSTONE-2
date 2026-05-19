@@ -16,6 +16,8 @@ public interface RatingRepository extends JpaRepository<Rating, Integer> {
     Rating findRatingById(Integer id);
     Rating findRatingByRequestId(Integer id);
 
+    List<Rating> findRatingByWorkerId(Integer requestId);
+
     @Query("SELECT AVG(r.score) FROM Rating r WHERE r.workerId = ?1")
     Double getAverageScoreByWorkerId(Integer workerId);
 }

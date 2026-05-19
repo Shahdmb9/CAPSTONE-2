@@ -17,6 +17,7 @@ public interface MaintenanceRequestRepository extends JpaRepository<MaintenanceR
 
     MaintenanceRequest findMaintenanceRequestById(Integer id);
 
+    List<MaintenanceRequest> findMaintenanceRequestByWorkerIdAndUrgentIsTrue(Integer workerId);
 //    Integer countAll();
     Integer countMaintenanceRequestByWorkerIdAndStatus(Integer workerId, String status);
     List<MaintenanceRequest> findMaintenanceRequestByUrgentIsFalseAndStatus(String status);
@@ -31,6 +32,15 @@ public interface MaintenanceRequestRepository extends JpaRepository<MaintenanceR
     Integer countByWorkerId(Integer workerId);
     Integer countMaintenanceRequestByUrgentIsTrue();
     Integer countMaintenanceRequestByCategoryId(Integer categoryId);
+
+    @Query("SELECT r FROM MaintenanceRequest r ORDER BY r.createdAt DESC")
+    List<MaintenanceRequest> sortMaintenanceRequestByDate();
+
+    @Query("SELECT r FROM MaintenanceRequest r ORDER BY r.createdAt")
+    List<MaintenanceRequest> sortMaintenanceRequestByDateEarliest();
+
+    @Query("SELECT r FROM MaintenanceRequest r ORDER BY r.urgent DESC, r.createdAt")
+    List<MaintenanceRequest> sortMaintenanceRequestByUrgentAndDate();
 
     @Query("SELECT COALESCE(SUM(w.baseSalary), 0) FROM MaintenanceRequest r JOIN Worker w ON w.id = r.workerId WHERE r.workerId = ?1 AND r.status = 'RESOLVED' AND MONTH(r.updatedAt) = MONTH(CURRENT_DATE) AND YEAR(r.updatedAt) = YEAR(CURRENT_DATE)")
     Double getTotalSalaryThisMonth(Integer workerId);

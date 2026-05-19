@@ -40,7 +40,7 @@ public class InvoicePdfService {
             throw new ApiException("You are not allowed to view this invoice");
 
         // get the worker and materials for this request
-        Worker worker    = workerRepository.findWorkerById(request.getWorkerId());
+        Worker worker = workerRepository.findWorkerById(request.getWorkerId());
         List<Material> materials = materialRepository.findMaterialByRequestId(requestId);
 
         // calculate the total cost of the materials and add it to worker base salary'
@@ -71,9 +71,9 @@ public class InvoicePdfService {
 
             // worker info
             document.add(new Paragraph("-----------------------------------"));
-            document.add(new Paragraph("Worker   : " + worker.getName()));
-            document.add(new Paragraph("Phone    : " + worker.getPhone()));
-            document.add(new Paragraph("Labour   : SAR " + worker.getBaseSalary()));
+            document.add(new Paragraph("Worker           : " + worker.getName()));
+            document.add(new Paragraph("Phone            : " + worker.getPhone()));
+            document.add(new Paragraph("Service Charge   : SAR " + worker.getBaseSalary()));
             document.add(new Paragraph("-----------------------------------"));
             document.add(new Paragraph(" "));
 
@@ -86,8 +86,7 @@ public class InvoicePdfService {
                             "  - " + m.getName() +
                                     "  x" + m.getQuantityUsed() +
                                     "  @ SAR " + m.getUnitCost() +
-                                    "  = SAR " + subtotal
-                    ));
+                                    "  = SAR " + subtotal));
                 }
                 document.add(new Paragraph("Materials Total: SAR " + materialsCost));
                 document.add(new Paragraph(" "));
@@ -104,7 +103,7 @@ public class InvoicePdfService {
             return baos.toByteArray();
 
         } catch (Exception e) {
-            throw new ApiException("Could not generate PDF: " + e.getMessage());
+            throw new ApiException("pdf failed: " + e.getMessage());
         }
     }
 }

@@ -11,6 +11,7 @@ import org.json.JSONObject;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -328,19 +329,7 @@ public class WorkerService {
 
     //Get worker stats
 
-    public Map<String, Object> getWorkerStats(Integer workerId) {
-        getWorkerById(workerId);
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("totalRequests", requestRepository.countByWorkerId(workerId));
-        stats.put("resolved", requestRepository.countMaintenanceRequestByWorkerIdAndStatus(workerId, "RESOLVED"));
-        stats.put("inProgress", requestRepository.countMaintenanceRequestByWorkerIdAndStatus(workerId, "IN_PROGRESS"));
-        stats.put("assigned", requestRepository.countMaintenanceRequestByWorkerIdAndStatus(workerId, "ASSIGNED"));
 
-        Double avgRating = ratingRepository.getAverageScoreByWorkerId(workerId);
-        stats.put("averageRating", avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0);
-
-        return stats;
-    }
 
     public void updateWorkerAvailability(Integer workerId) {
         Worker worker = getWorkerById(workerId);
@@ -351,18 +340,12 @@ public class WorkerService {
             notificationService.notifyUsers(workerId);
     }
 
-
-    // helper method: get request and verify it belongs to this worker
-
-    private MaintenanceRequest getMyRequest(Integer workerId, Integer requestId) {
-        MaintenanceRequest request = requestRepository.findMaintenanceRequestById(requestId);
-        if(request==null)
-            throw new ApiException("Request not found: ");
-        if (request.getWorkerId() == null || !request.getWorkerId().equals(workerId)) {
-            throw new RuntimeException("this request is not assigned to you");
-        }
-        return request;
+    public List<MaintenanceRequest> getWorkerUrgentRequest(Integer workerId){
+        getWorkerById(workerId);
+        return requestRepository.findMaintenanceRequestByWorkerIdAndUrgentIsTrue(workerId);
     }
+
+    //letting the AI estmate the time to solve the problem based on the problem description
 
     public Map<String, Object> getRequiestEstmatedTime(Integer workerId,Integer requestId ) {
 
@@ -389,5 +372,46 @@ public class WorkerService {
         return result;
 
     }
+
+    public Map<String, Double> getWorkersRatingSummery() {
+        Map<String, Double> result = new HashMap<>();
+        List<Worker> workers = workerRepository.findAll();
+        for(Worker w:workers){
+            Double avgRating = ratingRepository.getAverageScoreByWorkerId(w.getId());
+            if(avgRating==null)
+                avgRating=0.0;
+            result.put(w.getName(),avgRating);
+        }
+        //return the summery of all the workers rating (worker name ,his rating)
+        return result;
+    }
+
+    public Map<String, Object> getWorkerStats(Integer workerId) {
+        getWorkerById(workerId);
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalRequests", requestRepository.countByWorkerId(workerId));
+        stats.put("resolved", requestRepository.countMaintenanceRequestByWorkerIdAndStatus(workerId, "RESOLVED"));
+        stats.put("inProgress", requestRepository.countMaintenanceRequestByWorkerIdAndStatus(workerId, "IN_PROGRESS"));
+        stats.put("assigned", requestRepository.countMaintenanceRequestByWorkerIdAndStatus(workerId, "ASSIGNED"));
+
+        Double avgRating = ratingRepository.getAverageScoreByWorkerId(workerId);
+        stats.put("averageRating", avgRating != null ? Math.round(avgRating * 10.0) / 10.0 : 0);
+
+        return stats;
+    }
+
+    // helper method: get request and verify it belongs to this worker
+
+    private MaintenanceRequest getMyRequest(Integer workerId, Integer requestId) {
+        MaintenanceRequest request = requestRepository.findMaintenanceRequestById(requestId);
+        if(request==null)
+            throw new ApiException("Request not found: ");
+        if (request.getWorkerId() == null || !request.getWorkerId().equals(workerId)) {
+            throw new RuntimeException("this request is not assigned to you");
+        }
+        return request;
+    }
+
+
 }
 

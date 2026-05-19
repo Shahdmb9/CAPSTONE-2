@@ -310,6 +310,26 @@ public class MaintenanceRequestService {
 
     }
 
+    public List<MaintenanceRequest> getRequestsByLatest() {
+        List<MaintenanceRequest> requests=requestRepository.sortMaintenanceRequestByDate();
+        if(requests.isEmpty())
+            throw new ApiException("No requests found");
+        return requests;
+    }
+
+    public List<MaintenanceRequest> getRequestsByOldest() {
+        List<MaintenanceRequest> requests=requestRepository.sortMaintenanceRequestByDateEarliest();
+        if(requests.isEmpty())
+            throw new ApiException("No requests found");
+        return requests;
+    }
+
+    public List<MaintenanceRequest> getRequestsByUrgentAndOldest() {
+        List<MaintenanceRequest> requests=requestRepository.sortMaintenanceRequestByUrgentAndDate();
+        if(requests.isEmpty())
+            throw new ApiException("No requests found");
+        return requests;
+    }
 
     public List<Worker> getClosetWorkersInCategory(Integer userid,Integer category) {
         List<Worker> workers=workerRepository.findBestWorkersBySpecialityAndAvailable(category);
@@ -337,29 +357,6 @@ public class MaintenanceRequestService {
         }
         return closetWorkers;
 
-    }
-    public Map<Integer,Double> sortByDistance(List<Worker> workers,User user){
-
-        // 1. collect distance with worker id and save them as key value
-        Map<Integer, Double> distanceMap = new LinkedHashMap<>();
-        for (Worker worker : workers) {
-            Double dist = distanceMatrixService.getDistance(worker.getDistrict(),user.getDistrict());
-            distanceMap.put(worker.getId(), dist);
-        }
-
-        //make it as list to sort them
-        List<Map.Entry<Integer, Double>> entryList = new ArrayList<>(distanceMap.entrySet());
-
-        // 3. Sort the list by value which contains distance
-        Collections.sort(entryList, Comparator.comparingDouble(Map.Entry::getValue));
-
-        // 4. saved the sorted list to a new map again
-        Map<Integer, Double> sortedMap = new LinkedHashMap<>();
-        for (Map.Entry<Integer, Double> entry : entryList) {
-            sortedMap.put(entry.getKey(), entry.getValue());
-        }
-
-        return sortedMap;
     }
 
     // global stats summary
@@ -399,6 +396,30 @@ public class MaintenanceRequestService {
             }
         }
         return closestWorker;
+    }
+
+    public Map<Integer,Double> sortByDistance(List<Worker> workers,User user){
+
+        // 1. collect distance with worker id and save them as key value
+        Map<Integer, Double> distanceMap = new LinkedHashMap<>();
+        for (Worker worker : workers) {
+            Double dist = distanceMatrixService.getDistance(worker.getDistrict(),user.getDistrict());
+            distanceMap.put(worker.getId(), dist);
+        }
+
+        //make it as list to sort them
+        List<Map.Entry<Integer, Double>> entryList = new ArrayList<>(distanceMap.entrySet());
+
+        // 3. Sort the list by value which contains distance
+        Collections.sort(entryList, Comparator.comparingDouble(Map.Entry::getValue));
+
+        // 4. saved the sorted list to a new map again
+        Map<Integer, Double> sortedMap = new LinkedHashMap<>();
+        for (Map.Entry<Integer, Double> entry : entryList) {
+            sortedMap.put(entry.getKey(), entry.getValue());
+        }
+
+        return sortedMap;
     }
 
 

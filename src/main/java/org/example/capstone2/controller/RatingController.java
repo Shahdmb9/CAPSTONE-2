@@ -8,7 +8,6 @@ import org.example.capstone2.model.Rating;
 import org.example.capstone2.service.RatingService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,17 +26,15 @@ public class RatingController {
     }
 
     @PostMapping("/rate-worker")
-    public ResponseEntity<?> rate(@RequestBody @Valid  Rating rating, Errors errors) {
-        if(errors.hasErrors())
-            return ResponseEntity.status(400).body(errors.getFieldError().getDefaultMessage());
+    public ResponseEntity<?> rate(@RequestBody @Valid  Rating rating) {
+
         ratingService.rateWorker(rating);
         return ResponseEntity.status(200).body(new ApiResponse("Rating submitted successfully"));
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody @Valid Rating rating, Errors errors) {
-        if(errors.hasErrors())
-            return ResponseEntity.status(400).body(errors.getFieldError().getDefaultMessage());
+    public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody @Valid Rating rating) {
+
         ratingService.updateRating(id,rating);
         return ResponseEntity.status(200).body(new ApiResponse("Rating updated successfully"));
     }

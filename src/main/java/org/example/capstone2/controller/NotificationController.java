@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.example.capstone2.model.Notification;
 import org.example.capstone2.service.NotificationService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,9 +16,8 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @PostMapping("/add-notification")
-    public ResponseEntity<?> add(@RequestBody @Valid Notification notification,Errors errors){
-        if(errors.hasErrors())
-            return ResponseEntity.status(400).body(errors.getFieldError().getDefaultMessage());
+    public ResponseEntity<?> add(@RequestBody @Valid Notification notification){
+
         notificationService.addNotification(notification);
         return ResponseEntity.status(200).body("Notification added successfully");
     }
@@ -36,9 +34,8 @@ public class NotificationController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<?> update(@PathVariable Integer id,@RequestBody @Valid Notification notification,Errors errors){
-        if(errors.hasErrors())
-            return ResponseEntity.status(400).body(errors.getFieldError().getDefaultMessage());
+    public ResponseEntity<?> update(@PathVariable Integer id,@RequestBody @Valid Notification notification){
+
         notificationService.updateNotification(id,notification);
         return ResponseEntity.status(200).body("Notification updated successfully");
     }

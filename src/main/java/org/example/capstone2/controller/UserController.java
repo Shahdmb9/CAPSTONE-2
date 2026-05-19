@@ -8,7 +8,6 @@ import org.example.capstone2.model.User;
 import org.example.capstone2.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,19 +27,15 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody @Valid User user, Errors errors) {
-        if (errors.hasErrors()) {
-            return ResponseEntity.status(400).body(errors.getFieldError().getDefaultMessage());
-        }
+    public ResponseEntity<?> register(@RequestBody @Valid User user) {
+
         userService.add(user);
         return ResponseEntity.status(200).body(new ApiResponse("User registered successfully"));
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody @Valid User user,Errors errors) {
-        if (errors.hasErrors()) {
-            return ResponseEntity.status(400).body(errors.getFieldError().getDefaultMessage());
-        }
+    public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody @Valid User user) {
+
         userService.update(id,user);
         return ResponseEntity.status(200).body("User updated successfully");
     }

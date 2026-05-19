@@ -6,13 +6,11 @@ import lombok.RequiredArgsConstructor;
 import org.example.capstone2.ApiResponse.ApiResponse;
 import org.example.capstone2.model.MaintenanceRequest;
 import org.example.capstone2.service.MaintenanceRequestService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.Errors;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/requests")
@@ -23,9 +21,8 @@ public class MaintenanceRequestController {
 
     // POST /api/requests
     @PostMapping("/submit")
-    public ResponseEntity<?> submit(@Valid @RequestBody MaintenanceRequest request, Errors errors) {
-        if(errors.hasErrors())
-            return ResponseEntity.status(400).body(errors.getFieldError().getDefaultMessage());
+    public ResponseEntity<?> submit(@Valid @RequestBody MaintenanceRequest request) {
+
        requestService.submitRequest(request);
        return ResponseEntity.status(200).body(new ApiResponse("Request submitted successfully"));
     }
@@ -36,9 +33,8 @@ public class MaintenanceRequestController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody @Valid MaintenanceRequest request, Errors errors) {
-        if (errors.hasErrors())
-            return ResponseEntity.status(400).body(errors.getFieldError().getDefaultMessage());
+    public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody @Valid MaintenanceRequest request) {
+
         requestService.updateRequest(id,request);
         return ResponseEntity.status(200).body(new ApiResponse("Request updated successfully"));
     }
@@ -55,10 +51,25 @@ public class MaintenanceRequestController {
         return ResponseEntity.status(200).body(new ApiResponse("Request assigned successfully"));
     }
 
-    @PutMapping("assign-to-closet-worker/{requestid}")
+    @PutMapping("/assign-to-closet-worker/{requestid}")
     public ResponseEntity<?> assignToClosetWorker(@PathVariable Integer requestid){
         requestService.assignToCloserWorker(requestid);
         return ResponseEntity.status(200).body(new ApiResponse("Request assigned to closet worker successfully"));
+    }
+
+    @GetMapping("/get-request-sorted-by-latest")
+    public ResponseEntity<?> getRequestSortedByLatest(){
+        return ResponseEntity.status(200).body(requestService.getRequestsByLatest());
+    }
+
+    @GetMapping("/get-earliest-request")
+    public ResponseEntity<?> getEarliestRequest(){
+        return ResponseEntity.status(200).body(requestService.getRequestsByOldest());
+    }
+
+    @GetMapping("/get-sorted-urgent-request")
+    public ResponseEntity<?> getUrgentOrders(){
+        return ResponseEntity.status(200).body(requestService.getRequestsByUrgentAndOldest());
     }
 
     @GetMapping("/get-closet-Workers/{userid}/{categoryid}")

@@ -8,7 +8,6 @@ import org.example.capstone2.ApiResponse.ApiResponse;
 import org.example.capstone2.model.Material;
 import org.example.capstone2.service.MaterialService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,17 +24,15 @@ public class MaterialController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<?> addMaterial(@RequestBody @Valid Material material, Errors errors){
-        if(errors.hasErrors())
-            return ResponseEntity.status(400).body(new ApiException(errors.getFieldError().getDefaultMessage()));
+    public ResponseEntity<?> addMaterial(@RequestBody @Valid Material material){
+
         materialService.addMaterials(material);
         return ResponseEntity.status(200).body(new ApiResponse("Material added successfully"));
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<?> update(@PathVariable Integer id,@RequestBody @Valid Material material, Errors errors){
-        if(errors.hasErrors())
-            return ResponseEntity.status(400).body(new ApiException(errors.getFieldError().getDefaultMessage()));
+    public ResponseEntity<?> update(@PathVariable Integer id,@RequestBody @Valid Material material){
+
         materialService.update(id,material);
         return ResponseEntity.status(200).body(new ApiResponse("Material updated successfully"));
     }

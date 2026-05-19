@@ -6,7 +6,6 @@ import org.example.capstone2.ApiResponse.ApiResponse;
 import org.example.capstone2.model.Worker;
 import org.example.capstone2.service.WorkerService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -21,9 +20,7 @@ public class WorkerController {
 
     // POST /api/workers
     @PostMapping("/add")
-    public ResponseEntity<?> add( @RequestBody @Valid Worker worker , Errors errors) {
-        if(errors.hasErrors())
-            return ResponseEntity.status(400).body(new ApiResponse(errors.getFieldError().getDefaultMessage()));
+    public ResponseEntity<?> add( @RequestBody @Valid Worker worker ) {
         workerService.add(worker);
         return ResponseEntity.status(200).body(new ApiResponse("Worker added successfully"));
     }
@@ -35,10 +32,8 @@ public class WorkerController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody @Valid Worker worker, Errors errors) {
-        if (errors.hasErrors())
-            return ResponseEntity.status(400).body(errors.getFieldError().getDefaultMessage());
-        workerService.update(id,worker);
+    public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody @Valid Worker worker) {
+       workerService.update(id,worker);
         return ResponseEntity.status(200).body(new ApiResponse("Worker updated successfully"));
     }
 

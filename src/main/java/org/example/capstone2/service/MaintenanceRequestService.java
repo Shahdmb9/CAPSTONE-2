@@ -288,28 +288,48 @@ public class MaintenanceRequestService {
 
     // tracking status of request
 //
-    @Scheduled(fixedRate = 30000) // Runs every 30 seconds
-    public void markUnacceptedRequestsAsUrgent() {
-            // Get all pending requests that are not yet marked as urgent
-            List<MaintenanceRequest> pendingRequests = requestRepository.findMaintenanceRequestByUrgentIsFalseAndStatus("PENDING");
+//    @Scheduled(fixedRate = 30000) // Runs every 30 seconds
+//    public void markUnacceptedRequestsAsUrgent() {
+//            // Get all pending requests that are not yet marked as urgent
+//            List<MaintenanceRequest> pendingRequests = requestRepository.findMaintenanceRequestByUrgentIsFalseAndStatus("PENDING");
+//
+//            LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+//
+//            for (MaintenanceRequest request : pendingRequests) {
+//                if (request.getCreatedAt().isBefore(fiveMinutesAgo)) {
+//                    User user = userRepository.findUserByRole("ADMIN");
+//                    request.setUrgent(true);
+//                    request.setUpdatedAt(LocalDateTime.now());
+//                    requestRepository.save(request);
+//                    //notifying the admin that the request is urgent and need assigning
+//                    String message="Request ID: " + request.getId() + " marked as URGENT";
+//                    mailService.sendPlainText(user.getEmail(),"Urgent request",message);
+//
+//                }
+//            }
+//
+//    }
 
-            LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
-
-            for (MaintenanceRequest request : pendingRequests) {
-                if (request.getCreatedAt().isBefore(fiveMinutesAgo)) {
-                    User user = userRepository.findUserByRole("ADMIN");
-                    request.setUrgent(true);
-                    request.setUpdatedAt(LocalDateTime.now());
-                    requestRepository.save(request);
-                    //notifying the admin that the request is urgent and need assigning
-                    String message="Request ID: " + request.getId() + " marked as URGENT";
-                    mailService.sendPlainText(user.getEmail(),"Urgent request",message);
-
-                }
-            }
-
+    public List<MaintenanceRequest> getRequestsByLatest() {
+        List<MaintenanceRequest> requests=requestRepository.sortMaintenanceRequestByDate();
+        if(requests.isEmpty())
+            throw new ApiException("No requests found");
+        return requests;
     }
 
+    public List<MaintenanceRequest> getRequestsByOldest() {
+        List<MaintenanceRequest> requests=requestRepository.sortMaintenanceRequestByDateEarliest();
+        if(requests.isEmpty())
+            throw new ApiException("No requests found");
+        return requests;
+    }
+
+    public List<MaintenanceRequest> getRequestsByUrgentAndOldest() {
+        List<MaintenanceRequest> requests=requestRepository.sortMaintenanceRequestByUrgentAndDate();
+        if(requests.isEmpty())
+            throw new ApiException("No requests found");
+        return requests;
+    }
 
     public List<Worker> getClosetWorkersInCategory(Integer userid,Integer category) {
         List<Worker> workers=workerRepository.findBestWorkersBySpecialityAndAvailable(category);

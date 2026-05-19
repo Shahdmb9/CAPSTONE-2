@@ -15,7 +15,7 @@ public class DistanceMatrixService {
 
     final private GeoApiContext geoApiContext;
 
-     //get distance  between two locations
+     //get distance between two locations
     public Double getDistance(String origin, String destination) {
         try {
             DistanceMatrix distanceMatrix = DistanceMatrixApi

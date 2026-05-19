@@ -9,9 +9,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
+import static java.lang.Math.min;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +42,14 @@ public class MaintenanceRequestService {
                 throw new ApiException("User not found: " + request.getUserId());
 
 
+        //using AI to classify the request
+        Integer categorey=openAiService.chat(request.getTitle());
+        request.setCategoryId(categorey);
+        //check if the category exists
+        Category category = categoryRepository.findCategoryById(request.getCategoryId());
+        if(category==null)
+            throw new ApiException("We can not classify: Make sure your is specific");
+
         if(request.getWorkerId()!=null) {
             if(user.getSubscriptionType().equalsIgnoreCase("FREE"))
                 throw new ApiException("Only PREMIUM users can assign workers");
@@ -56,16 +64,9 @@ public class MaintenanceRequestService {
            if(worker.getSpecialtyAt()!=request.getCategoryId())
                throw new ApiException("Worker specialty does not match request needed");
             //uncomment later
-//           whatsAppService.sendChatMessage(worker.getPhone(),"You have new request: "+request.getTitle()+"\n"+request.getDescription());
+           whatsAppService.sendChatMessage(worker.getPhone(),"You have new request: "+request.getTitle()+"\n"+request.getDescription());
 
         }
-        //using AI to classify the request
-        Integer categorey=openAiService.chat(request.getTitle());
-        request.setCategoryId(categorey);
-        //check if the category exists
-        Category category = categoryRepository.findCategoryById(request.getCategoryId());
-        if(category==null)
-            throw new ApiException("We can not classify: Make sure your is specific");
         request.setStatus("PENDING");
         request.setUrgent(false);
         request.setCreatedAt(LocalDateTime.now());
@@ -94,7 +95,7 @@ public class MaintenanceRequestService {
         return requestRepository.save(oldRequest);
     }
 
-    // ── extra ─────────────────────────────────────────────────────
+    // extra
 
     public MaintenanceRequest getRequestById(Integer requestId) {
         MaintenanceRequest request=requestRepository.findMaintenanceRequestById(requestId);
@@ -170,7 +171,7 @@ public class MaintenanceRequestService {
         if(best==null)
             best=workers.get(0);
 //uncomment later
-       // whatsAppService.sendChatMessage(best.getPhone(),"You have new request: "+request.getTitle()+"\n"+request.getDescription());
+        whatsAppService.sendChatMessage(best.getPhone(),"You have new request: "+request.getTitle()+"\n"+request.getDescription());
         request.setWorkerId(best.getId());
 //        request.setStatus("ASSIGNED");
         request.setUpdatedAt(LocalDateTime.now());
@@ -198,7 +199,7 @@ public class MaintenanceRequestService {
 
         Worker closest=findClosest(user,workers);
         request.setWorkerId(closest.getId());
-//        whatsAppService.sendChatMessage(closest.getPhone(),"You have new request:");
+        whatsAppService.sendChatMessage(closest.getPhone(),"You have new request:");
         request.setUpdatedAt(LocalDateTime.now());
         requestRepository.save(request);
 
@@ -239,7 +240,7 @@ public class MaintenanceRequestService {
         request.setWorkerId(workerId);
         requestRepository.save(request);
         //uncomment later
-       // whatsAppService.sendChatMessage(worker.getPhone(),"You have new request from the admin: "+request.getTitle()+"\n"+request.getDescription());
+        whatsAppService.sendChatMessage(worker.getPhone(),"You have new request from the admin: "+request.getTitle()+"\n"+request.getDescription());
 
     }
 
@@ -309,15 +310,56 @@ public class MaintenanceRequestService {
 //
 //    }
 
-//    public List<Worker> getBest5ClosetInCategory(Integer category) {
-//        List<Worker> workers=workerRepository.findBestWorkersBySpecialityAndAvailable(category);
-//        if(workers.isEmpty())
-//            throw new ApiException("No workers found in this category");
-//        if(workers.size()>5)
-//            workers=workers.subList(0,5);
-//        return workers;
-//
-//    }
+    public List<Worker> getClosetWorkersInCategory(Integer userid,Integer category) {
+        List<Worker> workers=workerRepository.findBestWorkersBySpecialityAndAvailable(category);
+        if(workers.isEmpty())
+            throw new ApiException("No workers found in this category");
+        User user=userRepository.findUserById(userid);
+        if(user==null)
+            throw new ApiException("User not found: ");
+
+        Map<Integer,Double> sortByDistance=sortByDistance(workers,user);
+
+        List<Worker> closetWorkers = new ArrayList<>();
+
+        //counter becouse I want to get only 5 workers
+        int counter=5;
+        //loop through the returned sorted map
+        for(Map.Entry<Integer,Double> entry:sortByDistance.entrySet()){
+            //getting the Key witch stores the worker id
+            Worker worker=workerRepository.findWorkerById(entry.getKey());
+            if(worker!=null)
+                closetWorkers.add(worker);
+            counter--;
+            if(counter==0)
+                break;
+        }
+        return closetWorkers;
+
+    }
+    public Map<Integer,Double> sortByDistance(List<Worker> workers,User user){
+
+        // 1. collect distance with worker id and save them as key value
+        Map<Integer, Double> distanceMap = new LinkedHashMap<>();
+        for (Worker worker : workers) {
+            Double dist = distanceMatrixService.getDistance(worker.getDistrict(),user.getDistrict());
+            distanceMap.put(worker.getId(), dist);
+        }
+
+        //make it as list to sort them
+        List<Map.Entry<Integer, Double>> entryList = new ArrayList<>(distanceMap.entrySet());
+
+        // 3. Sort the list by value which contains distance
+        Collections.sort(entryList, Comparator.comparingDouble(Map.Entry::getValue));
+
+        // 4. saved the sorted list to a new map again
+        Map<Integer, Double> sortedMap = new LinkedHashMap<>();
+        for (Map.Entry<Integer, Double> entry : entryList) {
+            sortedMap.put(entry.getKey(), entry.getValue());
+        }
+
+        return sortedMap;
+    }
 
     // global stats summary
 
@@ -329,6 +371,17 @@ public class MaintenanceRequestService {
         stats.put("inProgress", requestRepository.countByStatus("IN_PROGRESS"));
         stats.put("resolved", requestRepository.countByStatus("RESOLVED"));
         stats.put("cancelled", requestRepository.countByStatus("CANCELLED"));
+        return stats;
+    }
+
+    //stats for categorey
+    public Map<String, Object> getStatsOfCategory() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("Plumbing", requestRepository.countMaintenanceRequestByCategoryId(1));
+        stats.put("Electrical", requestRepository.countMaintenanceRequestByCategoryId(2));
+        stats.put("HVAC", requestRepository.countMaintenanceRequestByCategoryId(3));
+        stats.put("General", requestRepository.countMaintenanceRequestByCategoryId(4));
+
         return stats;
     }
 

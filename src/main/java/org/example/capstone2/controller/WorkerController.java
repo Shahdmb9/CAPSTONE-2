@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -138,6 +139,11 @@ public class WorkerController {
     @GetMapping("/earnings-this-month/{workerId}/")
     public ResponseEntity<?> getTotalEarningsThisMonth(@PathVariable Integer workerId) {
         return ResponseEntity.ok(workerService.getTotalEarningsThisMonth(workerId));
+    }
+
+    @GetMapping("/earnings-by-months/{workerid}/{date1}/{date2}")
+    public ResponseEntity<?> getEarningsByMonths(@PathVariable Integer workerid, @PathVariable LocalDate date1, @PathVariable LocalDate date2){
+        return ResponseEntity.status(200).body(workerService.getTotalEarningsMonthRange(workerid,date1,date2));
     }
 
     @GetMapping("/worker-stats/{workerid}")

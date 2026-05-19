@@ -29,8 +29,8 @@ public class User {
 
     @Email
     @NotEmpty(message = "Email cannot be empty")
-    @Column(columnDefinition = "VARCHAR(40) ")
-//    @Column(columnDefinition = "VARCHAR(40) UNIQUE")
+//    @Column(columnDefinition = "VARCHAR(40) ")
+    @Column(columnDefinition = "VARCHAR(40) UNIQUE")
     private String email;
 
     @NotEmpty(message = "Password cannot be empty")

@@ -4,6 +4,7 @@ import org.example.capstone2.model.Material;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface MaterialRepository extends JpaRepository<Material, Integer> {
@@ -20,4 +21,7 @@ public interface MaterialRepository extends JpaRepository<Material, Integer> {
 
     @Query("SELECT COALESCE(SUM(m.quantityUsed * m.unitCost), 0) FROM Material m JOIN MaintenanceRequest r ON r.id = m.requestId WHERE r.workerId = ?1 AND r.status = 'RESOLVED' AND MONTH(r.updatedAt) = MONTH(CURRENT_DATE) AND YEAR(r.updatedAt) = YEAR(CURRENT_DATE)")
     Double getTotalMaterialsCostThisMonth(Integer workerId);
+
+    @Query("SELECT COALESCE(SUM(m.quantityUsed * m.unitCost), 0) FROM Material m JOIN MaintenanceRequest r ON r.id = m.requestId WHERE r.workerId = ?1 AND r.status = 'RESOLVED' AND MONTH(r.updatedAt) between MONTH(?2) AND MONTH(?3)")
+    Double getTotalMaterialsCostBetweenMonths(Integer workerId, LocalDate startMonth, LocalDate endMonth);
 }

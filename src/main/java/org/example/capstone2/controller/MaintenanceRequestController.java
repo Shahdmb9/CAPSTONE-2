@@ -27,7 +27,7 @@ public class MaintenanceRequestController {
         if(errors.hasErrors())
             return ResponseEntity.status(400).body(errors.getFieldError().getDefaultMessage());
        requestService.submitRequest(request);
-       return ResponseEntity.status(200).body("Request submitted successfully");
+       return ResponseEntity.status(200).body(new ApiResponse("Request submitted successfully"));
     }
 
     @GetMapping("/get")
@@ -40,19 +40,19 @@ public class MaintenanceRequestController {
         if (errors.hasErrors())
             return ResponseEntity.status(400).body(errors.getFieldError().getDefaultMessage());
         requestService.updateRequest(id,request);
-        return ResponseEntity.status(200).body("Request updated successfully");
+        return ResponseEntity.status(200).body(new ApiResponse("Request updated successfully"));
     }
 
     @DeleteMapping("delete/{id}")
     public ResponseEntity<?> delete(@PathVariable Integer id) {
         requestService.deleteRequest(id);
-        return ResponseEntity.status(200).body("Request deleted successfully");
+        return ResponseEntity.status(200).body(new ApiResponse("Request deleted successfully"));
     }
 
     @PutMapping("auto-assign/{requestid}")
     public ResponseEntity<?> autoAssign(@PathVariable Integer requestid){
         requestService.autoAssignToBestWorker(requestid);
-        return ResponseEntity.status(200).body("Request assigned successfully");
+        return ResponseEntity.status(200).body(new ApiResponse("Request assigned successfully"));
     }
 
     @PutMapping("assign-to-closet-worker/{requestid}")
@@ -61,9 +61,19 @@ public class MaintenanceRequestController {
         return ResponseEntity.status(200).body(new ApiResponse("Request assigned to closet worker successfully"));
     }
 
+    @GetMapping("/get-closet-Workers/{userid}/{categoryid}")
+    public ResponseEntity<?> getBest5ClosetWorkers(@PathVariable Integer userid,@PathVariable Integer categoryid){
+        return ResponseEntity.status(200).body(requestService.getClosetWorkersInCategory(userid,categoryid));
+    }
+
     @GetMapping("/get-stats")
     public ResponseEntity<?> getStats(){
         return ResponseEntity.status(200).body(requestService.getStats());
+    }
+
+    @GetMapping("get-stats-of-category")
+    public ResponseEntity<?> getStatsOfCategory(){
+        return ResponseEntity.status(200).body(requestService.getStatsOfCategory());
     }
 
     @GetMapping("/get-request-by-status/{status}")
@@ -84,13 +94,13 @@ public class MaintenanceRequestController {
     @PutMapping("/cancel-request/{userid}/{requestid}")
     public ResponseEntity<?> cancelRequest(@PathVariable Integer userid,@PathVariable Integer requestid){
         requestService.cancelRequest(userid,requestid);
-        return ResponseEntity.status(200).body("Request canceled successfully");
+        return ResponseEntity.status(200).body(new ApiResponse("Request canceled successfully"));
     }
 
     @PutMapping("/assign-worker-request/{userid}/{workerid}/{requestid}")
     public ResponseEntity<?> assignWorkerRequest(@PathVariable Integer userid,@PathVariable Integer workerid,@PathVariable Integer requestid){
         requestService.AdminAssiningWorker(userid,workerid,requestid);
-        return ResponseEntity.status(200).body("Request assigned successfully");
+        return ResponseEntity.status(200).body(new ApiResponse("Request assigned successfully"));
     }
 
 

@@ -20,8 +20,8 @@ public class Worker {
     private String name;
 
     @NotEmpty(message = "Phone cannot be empty")
-    @Column(columnDefinition = "VARCHAR(15)")
-//    @Column(columnDefinition = "VARCHAR(15) UNIQUE")
+//    @Column(columnDefinition = "VARCHAR(15)")
+    @Column(columnDefinition = "VARCHAR(15) UNIQUE")
     private String phone;
 
     @NotNull(message = "Email cannot be empty")

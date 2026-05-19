@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -29,9 +30,13 @@ public interface MaintenanceRequestRepository extends JpaRepository<MaintenanceR
     Integer countByStatus(String status);
     Integer countByWorkerId(Integer workerId);
     Integer countMaintenanceRequestByUrgentIsTrue();
+    Integer countMaintenanceRequestByCategoryId(Integer categoryId);
 
     @Query("SELECT COALESCE(SUM(w.baseSalary), 0) FROM MaintenanceRequest r JOIN Worker w ON w.id = r.workerId WHERE r.workerId = ?1 AND r.status = 'RESOLVED' AND MONTH(r.updatedAt) = MONTH(CURRENT_DATE) AND YEAR(r.updatedAt) = YEAR(CURRENT_DATE)")
     Double getTotalSalaryThisMonth(Integer workerId);
+
+    @Query("SELECT COALESCE(SUM(w.baseSalary), 0) FROM MaintenanceRequest r JOIN Worker w ON w.id = r.workerId WHERE r.workerId = ?1 AND r.status = 'RESOLVED' AND MONTH(r.updatedAt) between MONTH(?2) AND MONTH(?3)")
+    Double getTotalSalaryBetweenMonths(Integer workerId, LocalDate startMonth, LocalDate endMonth);
 
     @Transactional
     @Modifying

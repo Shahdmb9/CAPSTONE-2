@@ -7,6 +7,9 @@ import org.example.capstone2.model.*;
 import org.example.capstone2.repository.*;
 import org.springframework.stereotype.Service;
 
+import org.json.JSONObject;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -177,7 +180,7 @@ public class WorkerService {
         List<MaintenanceRequest> updatedRequest=requestRepository.findMaintenanceRequestByWorkerIdAndStatus(workerId,"PENDING");
         requestRepository.updateAllWorkerIdInRequest(workerId);
         //uncomment later
-        //notificationService.notifyUsersNotAvailably(updatedRequest,workerId);
+        notificationService.notifyUsersNotAvailably(updatedRequest,workerId);
         request.setUpdatedAt(LocalDateTime.now());
         requestRepository.save(request);
     }
@@ -241,7 +244,7 @@ public class WorkerService {
         worker.setAvailable(true);
         workerRepository.save(worker);
         //uncomment later
-        //notificationService.notifyUsers(workerId);
+        notificationService.notifyUsers(workerId);
         request.setStatus("RESOLVED");
         request.setUpdatedAt(LocalDateTime.now());
         requestRepository.save(request);
@@ -275,6 +278,21 @@ public class WorkerService {
         result.put("totalEarned",salary + materials);
         return result;
     }
+    public Map<String, Object> getTotalEarningsMonthRange(Integer workerId, LocalDate startDate, LocalDate endDate) {
+        getWorkerById(workerId);
+        List<MaintenanceRequest> maintenanceRequest=requestRepository.findMaintenanceRequestByWorkerId(workerId);
+        if(maintenanceRequest.isEmpty())
+            throw new ApiException("you dont have requests");
+
+        Double salary    = requestRepository.getTotalSalaryBetweenMonths(workerId,startDate,endDate);
+        Double materials = materialRepository.getTotalMaterialsCostBetweenMonths(workerId,startDate,endDate);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("salaryEarned",salary);
+        result.put("materialsEarned", materials);
+        result.put("totalEarned",salary + materials);
+        return result;
+    }
 
     //sort workers by rating in specific specialty
 
@@ -290,7 +308,12 @@ public class WorkerService {
     public Map<String, Object> getDistanceBetweenWorkersAndUser(Integer workerId, Integer requestId) {
         Worker worker = getWorkerById(workerId);
 
-        MaintenanceRequest request = getMyRequest(workerId, requestId);
+        MaintenanceRequest request = requestRepository.findMaintenanceRequestById(requestId);
+        if(request==null)
+            throw new ApiException("Request not found: ");
+        if (request.getWorkerId() != null && !request.getWorkerId().equals(workerId)) {
+            throw new RuntimeException("this request is not assigned to you");
+        }
 
         User user = userRepository.findUserById(request.getUserId());
 
@@ -324,8 +347,8 @@ public class WorkerService {
         worker.setAvailable(!worker.isAvailable());
         workerRepository.save(worker);
         //uncomment later
-        //if(worker.isAvailable())
-          //  notificationService.notifyUsers(workerId);
+        if(worker.isAvailable())
+            notificationService.notifyUsers(workerId);
     }
 
 
@@ -341,7 +364,7 @@ public class WorkerService {
         return request;
     }
 
-    public String getRequiestEstmatedTime(Integer workerId,Integer requestId ) {
+    public Map<String, Object> getRequiestEstmatedTime(Integer workerId,Integer requestId ) {
 
         MaintenanceRequest request = requestRepository.findMaintenanceRequestById(requestId);
         if(request==null)
@@ -354,9 +377,16 @@ public class WorkerService {
                 "give me the estimated time to solve it as a specialist in the problem field \n" +
                 "answer as json including hours and time ex: {\"hours\" : 1,\n" +
                 "\"minutes\" : 30} dont add anything else. hours let it numbers only without dot, and the minute also   ";
-        return openAiService.estmatedTime(promot);
 
+        //convert the response string as json object
+        JSONObject jsonObject = new JSONObject(openAiService.estmatedTime(promot));
+        Integer hours = jsonObject.getInt("hours");
+        Double minutes = jsonObject.getDouble("minutes");
 
+        Map<String, Object> result = new HashMap<>();
+        result.put("hours", hours);
+        result.put("minutes", minutes);
+        return result;
 
     }
 }

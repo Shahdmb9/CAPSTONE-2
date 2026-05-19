@@ -151,9 +151,9 @@ public class WorkerController {
        return ResponseEntity.status(200).body(workerService.getAvailableWorkersBySpecialty(categoryid));
     }
 
-    @GetMapping("/get-workers-rating-summery")
-    public ResponseEntity<?> getWorkersRatingSummery(){
-        return ResponseEntity.status(200).body(workerService.getWorkersRatingSummery());
+    @GetMapping("/get-worker-avg-rating/{workerid}")
+    public ResponseEntity<?> getWorkerRating(@PathVariable Integer workerid){
+        return ResponseEntity.status(200).body(workerService.getWorkerRating(workerid));
     }
 
     @PutMapping("/update-worker-availabilty/{workerId}")

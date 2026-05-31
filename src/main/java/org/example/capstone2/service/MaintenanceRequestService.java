@@ -58,6 +58,9 @@ public class MaintenanceRequestService {
         if(category==null)
             throw new ApiException("We can not classify your request: Make sure your title is specific");
 
+        if(!request.getAssigningMethod().equalsIgnoreCase("Open") && user.getSubscriptionType().equalsIgnoreCase("FREE"))
+             throw new ApiException("un-subscribed users can only use \" Open \" in assigning Method feature");
+
         if(request.getWorkerId()!=null) {
             if(user.getSubscriptionType().equalsIgnoreCase("FREE"))
                 throw new ApiException("Only PREMIUM users can assign workers");
@@ -79,9 +82,7 @@ public class MaintenanceRequestService {
 
         }
 
-        if(request.getAssigningMethod()!=null && !request.getAssigningMethod().equalsIgnoreCase("USER CHOICE")){
-            if(user.getSubscriptionType().equalsIgnoreCase("FREE"))
-                throw new ApiException("Only PREMIUM users can use \"assigning Method\" feature");
+        if(!request.getAssigningMethod().equalsIgnoreCase("USER CHOICE")&& !request.getAssigningMethod().equalsIgnoreCase("Open")){
 
             if(request.getAssigningMethod().equalsIgnoreCase("Geographic Proximity"))
                 assignToCloserWorker(request);

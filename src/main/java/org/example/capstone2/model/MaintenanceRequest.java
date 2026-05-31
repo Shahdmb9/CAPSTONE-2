@@ -48,7 +48,7 @@ public class MaintenanceRequest {
     private LocalDateTime updatedAt;
 
     @Column(columnDefinition = "Boolean DEFAULT FALSE",insertable = false)
-    private Boolean urgent = false;
+    private Boolean urgent;
 
     @Column(columnDefinition = "INT")
     private Integer userId;

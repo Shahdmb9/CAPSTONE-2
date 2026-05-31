@@ -41,7 +41,7 @@ public class Worker {
     @Column(columnDefinition = "VARCHAR(40)")
     private String district;
 
-    @Column(columnDefinition = "Boolean")
-    private boolean available;
+    @Column(columnDefinition = " Boolean DEFAULT FALSE",insertable = false)
+    private Boolean available;
 
 }

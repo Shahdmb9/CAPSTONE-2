@@ -43,8 +43,8 @@ public class RatingService {
 
     // rate a worker
 
-    public void rateWorker(Rating rating) {
-        MaintenanceRequest request=requestRepository.findMaintenanceRequestById(rating.getRequestId());
+    public void rateWorker(Integer userId,Integer workerId,Integer RequestId,Rating rating) {
+        MaintenanceRequest request=requestRepository.findMaintenanceRequestById(RequestId);
         if(request==null)
             throw new ApiException("Request not found: ");
 
@@ -52,25 +52,31 @@ public class RatingService {
             throw new ApiException("Only RESOLVED requests can be rated");
 
 
-        Worker worker=workerRepository.findWorkerById(rating.getWorkerId());
+        Worker worker=workerRepository.findWorkerById(workerId);
 
         if(worker == null)
             throw new ApiException("Worker not found: ");
 
-        if(request.getWorkerId()!=rating.getWorkerId())
+        if(request.getWorkerId()!=worker.getId())
             throw new ApiException("Worker not assigned to this request");
 
+        if(request.getUserId()!=userId)
+            throw new ApiException("User not authorized to rate this worker");
+
         if (ratingRepository.findRatingByRequestId(rating.getRequestId())!=null) {
-            throw new RuntimeException("You already rate the worker.");
+            throw new ApiException("You already rate the worker.");
         }
 
+        rating.setUserId(userId);
+        rating.setWorkerId(workerId);
+        rating.setRequestId(RequestId);
         rating.setRatedAt(LocalDateTime.now());
         ratingRepository.save(rating);
     }
 
-    public void updateRating(Integer ratingid,Rating rating) {
+    public void updateRating(Integer ratingId,Rating rating) {
 //
-        Rating oldRating=ratingRepository.findRatingById(ratingid);
+        Rating oldRating=ratingRepository.findRatingById(ratingId);
         if(oldRating==null)
             throw new ApiException("Rating not found: " );
 

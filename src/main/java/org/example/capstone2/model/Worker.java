@@ -19,12 +19,16 @@ public class Worker {
     @Size(min = 3, message = "Name must be at least 3 characters long")
     private String name;
 
+    @NotEmpty(message = "Password cannot be empty")
+    @Column(columnDefinition = "varchar(40)")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$",message = "password must contain small and capital" +
+            " letters and numbers and must be more than 8 character")
+    private String password;
+
     @NotEmpty(message = "Phone cannot be empty")
-//    @Column(columnDefinition = "VARCHAR(15)")
     @Column(columnDefinition = "VARCHAR(15) UNIQUE")
     private String phone;
 
-    @NotNull(message = "Email cannot be empty")
     @Column(columnDefinition = "VARCHAR(10)")
     private Integer specialtyAt; //foreign key to category
 

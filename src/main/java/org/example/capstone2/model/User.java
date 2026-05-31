@@ -29,13 +29,13 @@ public class User {
 
     @Email
     @NotEmpty(message = "Email cannot be empty")
-//    @Column(columnDefinition = "VARCHAR(40) ")
     @Column(columnDefinition = "VARCHAR(40) UNIQUE")
     private String email;
 
     @NotEmpty(message = "Password cannot be empty")
     @Column(columnDefinition = "varchar(40)")
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$")
+    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$",message = "password must contain small and capital" +
+            " letters and numbers and must be more than 8 character")
     private String password;
 
     @NotEmpty(message = "District cannot be null")

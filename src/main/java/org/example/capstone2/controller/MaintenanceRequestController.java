@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 
 @RestController
@@ -20,10 +21,10 @@ public class MaintenanceRequestController {
     private final MaintenanceRequestService requestService;
 
     // POST /api/requests
-    @PostMapping("/submit")
-    public ResponseEntity<?> submit(@Valid @RequestBody MaintenanceRequest request) {
+    @PostMapping("/submit/{userid}")
+    public ResponseEntity<?> submit(@PathVariable Integer userid,@Valid @RequestBody MaintenanceRequest request) {
 
-       requestService.submitRequest(request);
+       requestService.submitRequest(userid,request);
        return ResponseEntity.status(200).body(new ApiResponse("Request submitted successfully"));
     }
 
@@ -45,17 +46,17 @@ public class MaintenanceRequestController {
         return ResponseEntity.status(200).body(new ApiResponse("Request deleted successfully"));
     }
 
-    @PutMapping("auto-assign/{requestid}")
-    public ResponseEntity<?> autoAssign(@PathVariable Integer requestid){
-        requestService.autoAssignToBestWorker(requestid);
-        return ResponseEntity.status(200).body(new ApiResponse("Request assigned successfully"));
-    }
+//    @PutMapping("auto-assign/{requestid}")
+//    public ResponseEntity<?> autoAssign(@PathVariable Integer requestid){
+//        requestService.autoAssignToBestWorker(requestid);
+//        return ResponseEntity.status(200).body(new ApiResponse("Request assigned successfully"));
+//    }
 
-    @PutMapping("/assign-to-closet-worker/{requestid}")
-    public ResponseEntity<?> assignToClosetWorker(@PathVariable Integer requestid){
-        requestService.assignToCloserWorker(requestid);
-        return ResponseEntity.status(200).body(new ApiResponse("Request assigned to closet worker successfully"));
-    }
+//    @PutMapping("/assign-to-closet-worker/{requestid}")
+//    public ResponseEntity<?> assignToClosetWorker(@PathVariable Integer requestid){
+//        requestService.assignToCloserWorker(requestid);
+//        return ResponseEntity.status(200).body(new ApiResponse("Request assigned to closet worker successfully"));
+//    }
 
     @GetMapping("/get-request-sorted-by-latest")
     public ResponseEntity<?> getRequestSortedByLatest(){
@@ -73,7 +74,7 @@ public class MaintenanceRequestController {
     }
 
     @GetMapping("/get-closet-Workers/{userid}/{categoryid}")
-    public ResponseEntity<?> getBest5ClosetWorkers(@PathVariable Integer userid,@PathVariable Integer categoryid){
+    public ResponseEntity<?> getClosetWorkers(@PathVariable Integer userid,@PathVariable Integer categoryid){
         return ResponseEntity.status(200).body(requestService.getClosetWorkersInCategory(userid,categoryid));
     }
 
@@ -113,7 +114,6 @@ public class MaintenanceRequestController {
         requestService.AdminAssiningWorker(userid,workerid,requestid);
         return ResponseEntity.status(200).body(new ApiResponse("Request assigned successfully"));
     }
-
 
 
     @GetMapping("/calculate-total-cost/{userid}/{requesid}")

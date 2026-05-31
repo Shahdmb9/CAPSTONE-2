@@ -25,10 +25,10 @@ public class RatingController {
         return ResponseEntity.status(200).body(ratingService.getAllRatings());
     }
 
-    @PostMapping("/rate-worker")
-    public ResponseEntity<?> rate(@RequestBody @Valid  Rating rating) {
+    @PostMapping("/rate-worker/{userId}/{workerId}/{requestId}")
+    public ResponseEntity<?> rate(@PathVariable Integer userId,@PathVariable Integer workerId,@PathVariable Integer requestId,@RequestBody @Valid  Rating rating) {
 
-        ratingService.rateWorker(rating);
+        ratingService.rateWorker(userId,workerId,requestId,rating);
         return ResponseEntity.status(200).body(new ApiResponse("Rating submitted successfully"));
     }
 

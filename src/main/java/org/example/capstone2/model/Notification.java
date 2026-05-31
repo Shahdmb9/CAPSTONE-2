@@ -17,11 +17,9 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotNull(message = "userId cannot be null")
     @Column(columnDefinition = "int")
     private Integer userId;
 
-    @NotNull(message = "WorkerId cannot be null")
     @Column(columnDefinition = "int")
     private Integer workerId;
 

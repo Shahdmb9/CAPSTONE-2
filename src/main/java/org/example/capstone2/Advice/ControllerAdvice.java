@@ -20,9 +20,14 @@ public class ControllerAdvice {
 
     // Our Exception
     @ExceptionHandler(value = ApiException.class)
-    public ResponseEntity ApiException(ApiException e){
+    public ResponseEntity<?> ApiException(ApiException e){
         String message=e.getMessage();
-        return ResponseEntity.status(400).body(message);
+        return ResponseEntity.status(400).body(new ApiResponse(message));
+    }
+    @ExceptionHandler(value = RuntimeException.class)
+    public ResponseEntity<?> RuntimeException(RuntimeException e){
+        String message=e.getMessage();
+        return ResponseEntity.status(500).body(new ApiResponse(message));
     }
     // Server Validation Exception
     @ExceptionHandler(value = MethodArgumentNotValidException.class)

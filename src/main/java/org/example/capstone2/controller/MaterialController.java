@@ -23,10 +23,10 @@ public class MaterialController {
         return ResponseEntity.status(200).body(materialService.getAllMaterials());
     }
 
-    @PostMapping("/add")
-    public ResponseEntity<?> addMaterial(@RequestBody @Valid Material material){
+    @PostMapping("/add/{requestId}")
+    public ResponseEntity<?> addMaterial(@PathVariable Integer requestId,@RequestBody @Valid Material material){
 
-        materialService.addMaterials(material);
+        materialService.addMaterials(requestId,material);
         return ResponseEntity.status(200).body(new ApiResponse("Material added successfully"));
     }
 

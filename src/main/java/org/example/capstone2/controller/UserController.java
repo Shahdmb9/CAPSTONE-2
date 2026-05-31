@@ -37,13 +37,13 @@ public class UserController {
     public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody @Valid User user) {
 
         userService.update(id,user);
-        return ResponseEntity.status(200).body("User updated successfully");
+        return ResponseEntity.status(200).body(new ApiResponse("User updated successfully"));
     }
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> delete(@PathVariable Integer id) {
         userService.delete(id);
-        return ResponseEntity.status(200).body("User deleted successfully");
+        return ResponseEntity.status(200).body(new ApiResponse("User deleted successfully"));
     }
 
     @PostMapping("/login/{password}/{email}")
@@ -54,13 +54,13 @@ public class UserController {
     @DeleteMapping("/delete/{userid}/{password}")
     public ResponseEntity<?> deleteUserAccount(@PathVariable Integer userid,@PathVariable String password) {
         userService.deleteAccount(userid,password);
-        return ResponseEntity.status(200).body("User deleted successfully");
+        return ResponseEntity.status(200).body(new ApiResponse("User deleted successfully"));
     }
 
     @PutMapping("/forget-password/{userId}/{email}")
     public ResponseEntity<?> forgetPassword(@PathVariable Integer userId,@PathVariable String email) {
         userService.forgetPassword(userId,email);
-        return ResponseEntity.status(200).body("new password generated successfully");
+        return ResponseEntity.status(200).body(new ApiResponse("new password generated successfully"));
     }
 
 

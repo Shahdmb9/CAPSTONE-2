@@ -24,13 +24,14 @@ public class MaterialService {
         return materialRepository.findAll();
     }
 
-    public void addMaterials(Material material) {
-        MaintenanceRequest request=requestRepository.findMaintenanceRequestById(material.getRequestId());
+    public void addMaterials(Integer requestId,Material material) {
+        MaintenanceRequest request=requestRepository.findMaintenanceRequestById(requestId);
         if(request==null)
             throw new ApiException("Request not found: ");
         if(!request.getStatus().equalsIgnoreCase("IN_PROGRESS"))
             throw new ApiException("Materials can only be added to IN_PROGRESS requests");
 
+        material.setRequestId(requestId);
         materialRepository.save(material);
     }
 

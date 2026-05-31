@@ -34,11 +34,12 @@ public class WorkerService {
 
     //register a new worker
 
-    public void add(Worker worker) {
-        Category category = categoryRepository.findCategoryById(worker.getSpecialtyAt());
+    public void add(Integer categoryId,Worker worker) {
+        Category category = categoryRepository.findCategoryById(categoryId);
         if (category == null) {
             throw new ApiException("Category not found: " );
         }
+        worker.setSpecialtyAt(categoryId);
         worker.setAvailable(true);
         workerRepository.save(worker);
     }
@@ -156,19 +157,19 @@ public class WorkerService {
         MaintenanceRequest request = requestRepository.findMaintenanceRequestById(requestId);
 
         if(!worker.getId().equals(request.getWorkerId())&&request.getWorkerId()!=null)
-            throw new RuntimeException("This request is for another worker");
+            throw new ApiException("This request is for another worker");
 
         if(request==null)
             throw new ApiException("Request not found: ");
 
         if (!request.getStatus().equalsIgnoreCase("PENDING")) {
-            throw new RuntimeException("Request is on" + request.getStatus());
+            throw new ApiException("Request is on" + request.getStatus());
         }
         if(request.getCategoryId()!=worker.getSpecialtyAt())
-            throw new RuntimeException("Worker specialty does not match request needed");
+            throw new ApiException("Worker specialty does not match request needed");
 
         if (!worker.isAvailable()) {
-            throw new RuntimeException("Worker is not available to take new requests");
+            throw new ApiException("Worker is not available to take new requests");
         }
 
 
@@ -193,19 +194,19 @@ public class WorkerService {
         User user = userRepository.findUserById(request.getUserId());
 
         if(!worker.getId().equals(request.getWorkerId()))
-            throw new RuntimeException("This request is for another worker");
+            throw new ApiException("This request is for another worker");
 
         if(request==null)
             throw new ApiException("Request not found: ");
 
         if (!request.getStatus().equalsIgnoreCase("PENDING")) {
-            throw new RuntimeException("Request is on" + request.getStatus());
+            throw new ApiException("Request is on" + request.getStatus());
         }
 
         request.setWorkerId(null);
         request.setUpdatedAt(LocalDateTime.now());
         //uncomment later
-       // whatsAppService.sendChatMessage(user.getPhone(),"You're request to worker "+worker.getName()+" Got rejected");
+        whatsAppService.sendChatMessage(user.getPhone(),"You're request to worker "+worker.getName()+" Got rejected");
         requestRepository.save(request);
 
     }
@@ -220,10 +221,10 @@ public class WorkerService {
         Worker worker=getWorkerById(workerId);
 
         if(!worker.getId().equals(request.getWorkerId()))
-            throw new RuntimeException("This request is for another worker");
+            throw new ApiException("This request is for another worker");
 
         if (!request.getStatus().equalsIgnoreCase("ASSIGNED")) {
-            throw new RuntimeException("Only ASSIGNED requests can be started");
+            throw new ApiException("Only ASSIGNED requests can be started");
         }
         request.setStatus("IN_PROGRESS");
         request.setUpdatedAt(LocalDateTime.now());
@@ -237,15 +238,16 @@ public class WorkerService {
 
         MaintenanceRequest request = getMyRequest(workerId, requestId);
         if (!request.getStatus().equalsIgnoreCase("IN_PROGRESS")) {
-            throw new RuntimeException("Only IN_PROGRESS requests can be resolved");
+            throw new ApiException("Only IN_PROGRESS requests can be resolved");
         }
         if(worker.getId()!=request.getWorkerId())
-            throw new RuntimeException("This request is not assigned to you");
+            throw new ApiException("This request is not assigned to you");
 
         worker.setAvailable(true);
         workerRepository.save(worker);
         //uncomment later
-        notificationService.notifyUsers(workerId);
+        if(notificationService.hasNotification(workerId))
+            notificationService.notifyUsers(workerId);
         request.setStatus("RESOLVED");
         request.setUpdatedAt(LocalDateTime.now());
         requestRepository.save(request);
@@ -313,7 +315,7 @@ public class WorkerService {
         if(request==null)
             throw new ApiException("Request not found: ");
         if (request.getWorkerId() != null && !request.getWorkerId().equals(workerId)) {
-            throw new RuntimeException("this request is not assigned to you");
+            throw new ApiException("this request is not assigned to you");
         }
 
         User user = userRepository.findUserById(request.getUserId());
@@ -353,7 +355,7 @@ public class WorkerService {
         if(request==null)
             throw new ApiException("Request not found: ");
         if (request.getWorkerId() != null && !request.getWorkerId().equals(workerId)) {
-            throw new RuntimeException("this request is not assigned to you");
+            throw new ApiException("this request is not assigned to you");
         }
 
         String promot="based on this maintenance problem:"+request.getDescription()+"\n" +
@@ -362,7 +364,7 @@ public class WorkerService {
                 "\"minutes\" : 30} dont add anything else. hours let it numbers only without dot, and the minute also   ";
 
         //convert the response string as json object
-        JSONObject jsonObject = new JSONObject(openAiService.estmatedTime(promot));
+        JSONObject jsonObject = new JSONObject(openAiService.Ai(promot));
         Integer hours = jsonObject.getInt("hours");
         Double minutes = jsonObject.getDouble("minutes");
 
@@ -402,7 +404,7 @@ public class WorkerService {
         if(request==null)
             throw new ApiException("Request not found: ");
         if (request.getWorkerId() == null || !request.getWorkerId().equals(workerId)) {
-            throw new RuntimeException("this request is not assigned to you");
+            throw new ApiException("this request is not assigned to you");
         }
         return request;
     }

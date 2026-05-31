@@ -3,6 +3,7 @@ package org.example.capstone2.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.example.capstone2.ApiResponse.ApiResponse;
 import org.example.capstone2.model.Notification;
 import org.example.capstone2.service.NotificationService;
 import org.springframework.http.ResponseEntity;
@@ -15,11 +16,11 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
-    @PostMapping("/add-notification")
-    public ResponseEntity<?> add(@RequestBody @Valid Notification notification){
+    @PostMapping("/add-notification/{userId}/{workerId}")
+    public ResponseEntity<?> add(@PathVariable Integer userId,@PathVariable Integer workerId){
 
-        notificationService.addNotification(notification);
-        return ResponseEntity.status(200).body("Notification added successfully");
+        notificationService.addNotification(userId,workerId);
+        return ResponseEntity.status(200).body(new ApiResponse("Notification added successfully"));
     }
 
     @GetMapping("/get-notification")
@@ -30,13 +31,13 @@ public class NotificationController {
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> delete(@PathVariable Integer id){
         notificationService.deleteNotification(id);
-        return ResponseEntity.status(200).body("Notification deleted successfully");
+        return ResponseEntity.status(200).body(new ApiResponse("Notification deleted successfully"));
     }
 
     @PutMapping("/update/{id}")
     public ResponseEntity<?> update(@PathVariable Integer id,@RequestBody @Valid Notification notification){
 
         notificationService.updateNotification(id,notification);
-        return ResponseEntity.status(200).body("Notification updated successfully");
+        return ResponseEntity.status(200).body(new ApiResponse("Notification updated successfully"));
     }
 }

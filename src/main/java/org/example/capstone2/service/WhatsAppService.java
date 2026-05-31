@@ -9,8 +9,8 @@ import org.springframework.util.MultiValueMap;
 @Service
 public class WhatsAppService {
 
-    private final String INSTANCE_ID = System.getenv("USER");
-    private final String TOKEN = System.getenv("WHATS_KEY");
+    private final String INSTANCE_ID = "instance178546";
+    private final String TOKEN = "mnt104j2xaztvrp2";
     private final String API_URL = "https://api.ultramsg.com/" + INSTANCE_ID + "/messages/chat";
 
     public String sendChatMessage(String to, String body) {

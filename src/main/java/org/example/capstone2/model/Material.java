@@ -17,7 +17,7 @@ public class Material {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @NotNull(message = "Request ID cannot be null")
+//    @NotNull(message = "Request ID cannot be null")
     @Column(columnDefinition = "INT")
     private Integer requestId;
 

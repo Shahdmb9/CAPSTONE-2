@@ -19,9 +19,9 @@ public class WorkerController {
     private final WorkerService workerService;
 
     // POST /api/workers
-    @PostMapping("/add")
-    public ResponseEntity<?> add( @RequestBody @Valid Worker worker ) {
-        workerService.add(worker);
+    @PostMapping("/add/{categoryId}")
+    public ResponseEntity<?> add( @PathVariable Integer categoryId,@RequestBody @Valid Worker worker ) {
+        workerService.add(categoryId,worker);
         return ResponseEntity.status(200).body(new ApiResponse("Worker added successfully"));
     }
 
@@ -159,7 +159,7 @@ public class WorkerController {
     @PutMapping("/update-worker-availabilty/{workerId}")
     public ResponseEntity<?> updateWorkerAvailability(@PathVariable Integer workerId) {
         workerService.updateWorkerAvailability(workerId);
-        return ResponseEntity.ok().body("Worker availability updated successfully");
+        return ResponseEntity.ok().body(new ApiResponse("Worker availability updated successfully"));
     }
 
     @GetMapping("/estmated-time/{workerid}/{requestid}")

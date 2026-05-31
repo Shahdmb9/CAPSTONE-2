@@ -27,14 +27,15 @@ public class NotificationService {
     }
 
     //adding notification for users to notify them when specific worker is available
-    public void addNotification(Notification notification){
-        User user = userRepository.findUserById(notification.getUserId());
+    public void addNotification(Integer userId,Integer workerId){
+        User user = userRepository.findUserById(userId);
         if(user==null)
             throw new ApiException("User not found: " );
-        Worker worker = workerRepository.findWorkerById(notification.getWorkerId());
+        Worker worker = workerRepository.findWorkerById(workerId);
         if(worker==null)
             throw new ApiException("Worker not found: " );
-        notificationRepository.save(notification);
+
+        notificationRepository.save(new Notification(null,userId,workerId));
     }
 
     public void updateNotification(Integer id, Notification notification){
@@ -77,6 +78,13 @@ public class NotificationService {
             User user = userRepository.findUserById(r.getUserId());
             whatsAppService.sendChatMessage(user.getPhone(),"The Worker: "+worker.getName()+" is not available!!");
         }
+    }
+
+    public boolean hasNotification(Integer workerid){
+        List<Notification> notification = notificationRepository.findNotificationByWorkerId(workerid);
+        if(notification.isEmpty())
+            return false;
+        return true;
     }
 
 

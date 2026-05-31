@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.capstone2.ApiResponse.ApiException;
 import org.example.capstone2.model.*;
 import org.example.capstone2.repository.*;
+import org.json.JSONObject;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -35,24 +36,34 @@ public class MaintenanceRequestService {
         return requestRepository.findAll();
     }
 
-    public void submitRequest(MaintenanceRequest request) {
-        User user= userRepository.findUserById(request.getUserId());
+    public void submitRequest(Integer userid,MaintenanceRequest request) {
+
+        request.setStatus("PENDING");
+        request.setUrgent(false);
+        request.setCreatedAt(LocalDateTime.now());
+
+        User user= userRepository.findUserById(userid);
 
         if(user==null)
-                throw new ApiException("User not found: " + request.getUserId());
+                throw new ApiException("User not found: ");
 
+        request.setUserId(userid);
 
         //using AI to classify the request
-        Integer categorey=openAiService.chat(request.getTitle());
-        request.setCategoryId(categorey);
+        Integer categoryAI=openAiService.chat(request.getTitle());
+        request.setCategoryId(categoryAI);
+
         //check if the category exists
         Category category = categoryRepository.findCategoryById(request.getCategoryId());
         if(category==null)
-            throw new ApiException("We can not classify: Make sure your is specific");
+            throw new ApiException("We can not classify your request: Make sure your title is specific");
 
         if(request.getWorkerId()!=null) {
             if(user.getSubscriptionType().equalsIgnoreCase("FREE"))
                 throw new ApiException("Only PREMIUM users can assign workers");
+
+            if(!request.getAssigningMethod().equalsIgnoreCase("USER CHOICE"))
+                throw new ApiException("please enter USER CHOICE on \"assigning Method\" field to use this feature");
 
            Worker worker =workerRepository.findWorkerById(request.getWorkerId());
 
@@ -67,9 +78,17 @@ public class MaintenanceRequestService {
            whatsAppService.sendChatMessage(worker.getPhone(),"You have new request: "+request.getTitle()+"\n"+request.getDescription());
 
         }
-        request.setStatus("PENDING");
-        request.setUrgent(false);
-        request.setCreatedAt(LocalDateTime.now());
+
+        if(request.getAssigningMethod()!=null && !request.getAssigningMethod().equalsIgnoreCase("USER CHOICE")){
+            if(user.getSubscriptionType().equalsIgnoreCase("FREE"))
+                throw new ApiException("Only PREMIUM users can use \"assigning Method\" feature");
+
+            if(request.getAssigningMethod().equalsIgnoreCase("Geographic Proximity"))
+                assignToCloserWorker(request);
+
+            if(request.getAssigningMethod().equalsIgnoreCase("Highest Rating"))
+                autoAssignToBestWorker(request);
+        }
         requestRepository.save(request);
     }
 
@@ -78,8 +97,8 @@ public class MaintenanceRequestService {
         requestRepository.deleteById(requestId);
     }
 
-    //check if i have to send the residintid in the path varible
-    public MaintenanceRequest updateRequest(Integer requestId,MaintenanceRequest request) {
+    //check if i have to send the user in the path varible
+    public void updateRequest(Integer requestId, MaintenanceRequest request) {
         MaintenanceRequest oldRequest = getRequestById(requestId);
         if (!oldRequest.getUserId().equals(request.getUserId())) {
             throw new ApiException("this request does not belong to you");
@@ -92,7 +111,7 @@ public class MaintenanceRequestService {
         oldRequest.setDescription(request.getDescription());
         oldRequest.setCategoryId(request.getCategoryId());
         oldRequest.setUpdatedAt(LocalDateTime.now());
-        return requestRepository.save(oldRequest);
+        requestRepository.save(oldRequest);
     }
 
     // extra
@@ -116,7 +135,7 @@ public class MaintenanceRequestService {
 
     public List<MaintenanceRequest> getRequestsByCategory(Integer categoryId) {
         if(categoryRepository.findCategoryById(categoryId)==null)
-                throw  new RuntimeException("Category not found: ");
+                throw  new ApiException("Category not found: ");
         return requestRepository.findMaintenanceRequestByCategoryId(categoryId);
     }
 
@@ -133,11 +152,11 @@ public class MaintenanceRequestService {
     public void cancelRequest(Integer userId, Integer requestId) {
         MaintenanceRequest request = getRequestById(requestId);
         if (!request.getUserId().equals(userId)) {
-            throw new RuntimeException("this request does not belong to you");
+            throw new ApiException("this request does not belong to you");
         }
         //check if the request is not accepted yet
         if (!request.getStatus().equalsIgnoreCase("PENDING")) {
-            throw new RuntimeException("Only PENDING requests can be cancelled");
+            throw new ApiException("Only PENDING requests can be cancelled");
         }
         request.setStatus("CANCELLED");
         request.setUpdatedAt(LocalDateTime.now());
@@ -146,27 +165,16 @@ public class MaintenanceRequestService {
 
     //Assign a request to the best worker (only for premium users)
 
-    public void autoAssignToBestWorker(Integer requestId) {
-        MaintenanceRequest request = getRequestById(requestId);
+    public void autoAssignToBestWorker(MaintenanceRequest request) {
         User user =userRepository.findUserById(request.getUserId());
         List<Worker> workers=workerRepository.findWorkerByAvailableAndSpecialtyAt(true,request.getCategoryId());
-        if(user==null)
-            throw new ApiException("User not found: ");
+        validateRequest(request, user, workers);
 
-        if(user.getSubscriptionType().equalsIgnoreCase("FREE"))
-            throw new ApiException("Only PREMIUM users can use auto-assign");
-
-        if (!request.getStatus().equalsIgnoreCase("PENDING"))
-            throw new ApiException("Only PENDING requests can be auto-assigned");
-
-        if(workers.isEmpty())
-            throw new ApiException("No available workers for this category");
-        
         //get the best worker for this category
         Worker best=null;
         if(!workerRepository.findBestWorkersBySpecialityAndAvailable(request.getCategoryId()).isEmpty())
              best = workerRepository.findBestWorkersBySpecialityAndAvailable(request.getCategoryId()).get(0);
-        
+
         //if no one has rating get any worker in this category
         if(best==null)
             best=workers.get(0);
@@ -178,28 +186,20 @@ public class MaintenanceRequestService {
         requestRepository.save(request);
     }
 
-    //assign a request to closer worker
-    public void assignToCloserWorker(Integer requestId) {
 
-        MaintenanceRequest request = getRequestById(requestId);
+
+    //assign a request to closer worker
+    public void assignToCloserWorker(MaintenanceRequest request) {
+
 
         User user =userRepository.findUserById(request.getUserId());
         List<Worker> workers=workerRepository.findWorkerByAvailableAndSpecialtyAt(true,request.getCategoryId());
-        if(user==null)
-            throw new ApiException("User not found: ");
 
-        if(user.getSubscriptionType().equalsIgnoreCase("FREE"))
-            throw new ApiException("Only PREMIUM users can use auto-assign");
-
-        if (!request.getStatus().equalsIgnoreCase("PENDING"))
-            throw new ApiException("Only PENDING requests can be assigned to the closest worker");
-
-        if(workers.isEmpty())
-            throw new ApiException("No available workers for this category");
+        validateRequest(request, user, workers);
 
         Worker closest=findClosest(user,workers);
         request.setWorkerId(closest.getId());
-        whatsAppService.sendChatMessage(closest.getPhone(),"You have new request:");
+        whatsAppService.sendChatMessage(closest.getPhone(),"You have new request:"+request.getTitle()+"\n"+request.getDescription());
         request.setUpdatedAt(LocalDateTime.now());
         requestRepository.save(request);
 
@@ -225,7 +225,7 @@ public class MaintenanceRequestService {
             throw new ApiException("Request not found: ");
 
         if(request.getWorkerId()!=null)
-            throw new ApiException("Worker already assigned");
+            throw new ApiException("request already assigned");
 
         Worker worker=workerRepository.findWorkerById(workerId);
         if(worker==null)
@@ -287,8 +287,8 @@ public class MaintenanceRequestService {
     }
 
     // tracking status of request
-//
-    @Scheduled(fixedRate = 30000) // Runs every 30 seconds
+
+    @Scheduled(fixedRate = 60000) // Runs every 60 seconds
     public void markUnacceptedRequestsAsUrgent() {
             // Get all pending requests that are not yet marked as urgent
             List<MaintenanceRequest> pendingRequests = requestRepository.findMaintenanceRequestByUrgentIsFalseAndStatus("PENDING");
@@ -302,12 +302,28 @@ public class MaintenanceRequestService {
                     request.setUpdatedAt(LocalDateTime.now());
                     requestRepository.save(request);
                     //notifying the admin that the request is urgent and need assigning
-                    String message="Request ID: " + request.getId() + " marked as URGENT";
-                    mailService.sendPlainText(user.getEmail(),"Urgent request",message);
+                    mailService.sendPlainText(user.getEmail(),generateAlertEmail(request).get("title"),generateAlertEmail(request).get("body"));
 
                 }
             }
 
+    }
+
+    public Map<String,String> generateAlertEmail(MaintenanceRequest request) {
+        String promot="Write will structured email that Alert the admin that the request with title:"+request.getTitle()+"\n" +
+                "and description: "+request.getDescription()+" is haven't been assigned for 5 minutes and now it is" +
+                " an urgent request because ut us not assigned yet and need his action to assigned it immediate  \n" +
+                "answer as json including title for the email and body ex: {\"title\" : \"Urgent request\",\n" +
+                "\"body\" : \"there is an urgent request\"} ";
+
+        //convert the response string as json object
+        JSONObject jsonObject = new JSONObject(openAiService.Ai(promot));
+        String title = jsonObject.getString("title");
+        String body = jsonObject.getString("body");
+        Map<String,String> email=new HashMap<>();
+        email.put("title",title);
+        email.put("body",body);
+        return email;
     }
 
     public List<MaintenanceRequest> getRequestsByLatest() {
@@ -384,6 +400,21 @@ public class MaintenanceRequestService {
     }
 
     //helper
+
+    private static void validateRequest(MaintenanceRequest request, User user, List<Worker> workers) {
+        if(user ==null)
+            throw new ApiException("User not found: ");
+
+        if(user.getSubscriptionType().equalsIgnoreCase("FREE"))
+            throw new ApiException("Only PREMIUM users can use auto-assign");
+
+        if (!request.getStatus().equalsIgnoreCase("PENDING"))
+            throw new ApiException("Only PENDING requests can be auto-assigned");
+
+        if(workers.isEmpty())
+            throw new ApiException("No available workers for this category");
+    }
+
     public Worker findClosest(User user, List<Worker> workers) {
         Worker closestWorker = workers.get(0);
         Double minDist = distanceMatrixService.getDistance(user.getDistrict(), closestWorker.getDistrict());;
@@ -421,6 +452,7 @@ public class MaintenanceRequestService {
 
         return sortedMap;
     }
+
 
 
 }

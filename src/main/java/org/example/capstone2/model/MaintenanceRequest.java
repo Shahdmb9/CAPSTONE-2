@@ -32,21 +32,26 @@ public class MaintenanceRequest {
     @Column(columnDefinition = "INT")
     private Integer categoryId;
 
-    @Pattern(regexp = "(PENDING|ASSIGNED|IN_PROGRESS|RESOLVED|CANCELLED)")
+    @Pattern(regexp = "(PENDING|ASSIGNED|IN_PROGRESS|RESOLVED|CANCELLED)",message = "Status must be PENDING, ASSIGNED, IN_PROGRESS, RESOLVED or CANCELLED")
     @Column(columnDefinition = "VARCHAR(20)")
     private String status ;
+
+
+    @Column(columnDefinition = "VARCHAR(30)")
+    @Pattern(regexp = "(Geographic Proximity|Highest Rating|USER CHOICE)",message = "Assigning Method must be Geographic Proximity, Highest Rating or USER CHOICE")
+    private String AssigningMethod;
 
     @Column(columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdAt;
     @Column(columnDefinition = "DATETIME")
     private LocalDateTime updatedAt;
 
-    @Column(columnDefinition = "Boolean")
-    private boolean urgent;
+    @Column(columnDefinition = "Boolean DEFAULT FALSE",insertable = false)
+    private Boolean urgent = false;
 
-    @NotNull(message = "userId cannot be null")
     @Column(columnDefinition = "INT")
     private Integer userId;
+
     @Column(columnDefinition = "INT")
     private Integer workerId;
 

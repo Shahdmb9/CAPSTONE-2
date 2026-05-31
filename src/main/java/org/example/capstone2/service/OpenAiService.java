@@ -25,7 +25,7 @@ public class OpenAiService {
         return Integer.parseInt(chatClient.prompt(prompt).call().content());
     }
 
-    public String estmatedTime(String prompt) {
+    public String Ai(String prompt) {
         String prompt1 =chatClient.prompt(prompt).call().content();
         return prompt1;
     }

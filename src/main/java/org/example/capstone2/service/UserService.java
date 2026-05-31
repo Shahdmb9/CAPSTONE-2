@@ -65,7 +65,7 @@ public class UserService {
     public User login(String password, String email) {
         User user = userRepository.findUserByPasswordAndEmail(password,email);
         if(user==null)
-            throw  new RuntimeException("login failed, your credentials are wrong");
+            throw  new ApiException("login failed, your credentials are wrong");
         return user;
     }
 
@@ -74,9 +74,9 @@ public class UserService {
     public List<MaintenanceRequest> getAllRequestsOfUser(Integer userId) {
         User user = userRepository.findUserById(userId);
         if(user==null)
-            throw new RuntimeException("User not found: " + userId);
+            throw new ApiException("User not found: " + userId);
         if(requestRepository.findMaintenanceRequestByUserId(userId).isEmpty())
-            throw new RuntimeException("User has no requests");
+            throw new ApiException("User has no requests");
         return requestRepository.findMaintenanceRequestByUserId(userId);
     }
 
@@ -84,9 +84,9 @@ public class UserService {
     public List<MaintenanceRequest> getUserRequestsByStatus(Integer userId, String status) {
         User user =userRepository.findUserById(userId);
         if(user==null)
-                throw new RuntimeException("User not found: ");
+                throw new ApiException("User not found: ");
         if(requestRepository.findMaintenanceRequestByUserIdAndStatus(userId, status.toUpperCase()).isEmpty())
-            throw new RuntimeException("User has no "+ status +" requests");
+            throw new ApiException("User has no "+ status +" requests");
         return requestRepository.findMaintenanceRequestByUserIdAndStatus(userId, status.toUpperCase());
     }
 
@@ -109,7 +109,7 @@ public class UserService {
     public void deleteAccount(Integer userId, String password) {
         User user = getUserById(userId);
         if (!user.getPassword().equals(password)) {
-            throw new RuntimeException("Password is wrong ");
+            throw new ApiException("Password is wrong ");
         }
         userRepository.delete(user);
     }
@@ -117,7 +117,7 @@ public class UserService {
     public void forgetPassword(Integer userId, String email){
         User user = getUserById(userId);
         if(!user.getEmail().equals(email)){
-            throw new RuntimeException("Email is wrong");
+            throw new ApiException("Email is wrong");
         }
         String newPassword="";
         do {

@@ -38,7 +38,8 @@ public class MaintenanceRequest {
 
 
     @Column(columnDefinition = "VARCHAR(30)")
-    @Pattern(regexp = "(Geographic Proximity|Highest Rating|USER CHOICE)",message = "Assigning Method must be Geographic Proximity, Highest Rating or USER CHOICE")
+    @NotEmpty(message = "Assigning Method cannot be empty")
+    @Pattern(regexp = "(Geographic Proximity|Highest Rating|User Selected|Open)",message = "Assigning Method must be Geographic Proximity, Highest Rating, USER CHOICE or Open")
     private String AssigningMethod;
 
     @Column(columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP")
